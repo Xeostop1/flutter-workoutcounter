@@ -6,11 +6,11 @@ enum VoiceGender {
 
 //모델
 class WorkoutSettings{
-  final String routneId;
+  final String routineId;
   int totalSets, repeatCount;
   Duration breakTime;
   bool isCountdownOn;
-  VoiceGender voieGender;
+  VoiceGender voiceGender;
 
   WorkoutSettings({
     required this.routineId,
