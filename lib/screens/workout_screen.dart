@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import '../view_models//workout_viewmodel.dart'; // ViewModel import
 import '../widgets/action_buttons.dart';
 import '../widgets/repeat_count_buttons.dart';
+import '../widgets/common_wheel_picker.dart';
+import '../widgets/workout_circle.dart';
+import 'settings_screen.dart'; // 상대 경로로 추가
+
+
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
@@ -33,38 +38,84 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }); // *** 수정됨: setState로 감싸줘야 화면이 갱신됨
   }
 
+  void _updateTotalSet(int newValue){
+    setState(() {
+      viewModel.updateTotalSet(newValue);
+    });
+  }
 
 
   @override
   Widget build(BuildContext context) {
+    final settings = viewModel.settings; // 더 짧게 쓰기 위해 변수로
+
     return Scaffold(
       appBar: AppBar(title: const Text('Workout Settings')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              '선택된 반복 횟수: ${viewModel.settings.repeatCount}회',
-              style: const TextStyle(fontSize: 24),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+              ),
+
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
+
+            // ✅ 기존 회수 버튼
             RepeatCountButtons(
-              selectedValue: viewModel.settings.repeatCount,
+              selectedValue: settings.repeatCount,
               onChanged: _updateRepeatCount,
             ),
+
+            WorkoutCircle(
+              totalSets: viewModel.settings.totalSets,
+              repeatCount: viewModel.settings.repeatCount,
+              restSeconds: viewModel.settings.breakTime.inSeconds,
+              progress: 0.80, // 예시: 25% 진행됨
+            ),
+
+            const SizedBox(height: 20),
+            // ✅ 휠피커 두 개
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ResetButton(
-                  onPressed: () {
-                    setState(() {
-                      viewModel.resetSettings(); // ✅ 상태 리셋 후 UI 갱신 ***
-                    });
-                  },
+                CommonWheelPicker(
+                  values: List.generate(10, (i) => i + 1), // 1~10세트
+                  selectedValue: settings.totalSets,
+                  onChanged: _updateTotalSet,
+                  unitLabel: '세트',
                 ),
-                SaveButton(onPressed: (){
-                },),
+                const SizedBox(width: 20),
+                CommonWheelPicker(
+                  values: List.generate(20, (i) => (i + 1) * 5), // 5~100회
+                  selectedValue: settings.repeatCount,
+                  onChanged: _updateRepeatCount,
+                  unitLabel: '회',
+                ),
               ],
-            )
+            ),
+            const SizedBox(height: 20),
+            // ✅ Reset, Save 버튼
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ResetButton(onPressed: _resetSettings),
+                const SizedBox(width: 16),
+                SaveButton(onPressed: () {
+                  // 추후 저장 기능 구현
+                }),
+              ],
+            ),
 
           ],
         ),
