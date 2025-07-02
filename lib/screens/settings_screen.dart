@@ -24,7 +24,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ 뒤로 가기 버튼
               IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new),
                 onPressed: () {
@@ -32,8 +31,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // ✅ Voice
               const Text('Voice', style: TextStyle(fontSize: 18)),
               const SizedBox(height: 12),
               Row(

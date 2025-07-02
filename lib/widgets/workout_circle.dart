@@ -5,6 +5,7 @@ class WorkoutCircle extends StatelessWidget {
   final int repeatCount;
   final int restSeconds;
   final double progress;
+  final void Function()? onStartPressed;
 
   const WorkoutCircle({
     super.key,
@@ -12,6 +13,7 @@ class WorkoutCircle extends StatelessWidget {
     required this.repeatCount,
     required this.restSeconds,
     required this.progress,
+    this.onStartPressed,
   });
 
   @override
@@ -56,13 +58,12 @@ class WorkoutCircle extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               IconButton(
-                onPressed: () {
-                  // TODO: 타이머 기능 연결
-                },
+                onPressed: onStartPressed, // ✅ 수정: 타이머 시작 함수 호출
                 icon: const Icon(Icons.play_circle_outline),
-                iconSize: 48,
+                iconSize: 40,
                 color: Colors.black,
               ),
+
             ],
           ),
         ],
@@ -88,6 +89,8 @@ class CirclePainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
+
+
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
