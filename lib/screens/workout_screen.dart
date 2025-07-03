@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../screens/routine_list_screen.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../widgets/reset_button.dart';
 import '../widgets/save_button.dart';
@@ -144,6 +145,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       appBar: AppBar(
         title: const Text('Workout Counter'),
         actions: [
+          // ✅ 저장된 루틴 보기 버튼
+          IconButton(
+            icon: const Icon(Icons.list_alt), // 리스트 아이콘
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const RoutineListScreen(),
+                ),
+              );
+            },
+          ),
+          // ✅ 기존 설정 버튼
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -157,6 +171,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
         ],
       ),
+
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

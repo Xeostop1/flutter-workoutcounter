@@ -15,9 +15,11 @@ class Routine {
     'reps': reps,
   };
 
-  factory Routine.fromJson(Map<String, dynamic> json) => Routine(
-    name: json['name'],
-    sets: json['sets'],
-    reps: json['reps'],
-  );
+  factory Routine.fromJson(Map<String, dynamic> json) {
+    return Routine(
+      name: json['name'],
+      sets: json['sets'],
+      reps: json['reps'],
+    );
+  }
 }
