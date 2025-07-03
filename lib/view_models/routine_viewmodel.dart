@@ -3,26 +3,52 @@ import 'dart:convert';
 import '../models/routine.dart';
 
 class RoutineViewModel {
-  List<Routine> routines = [];
+  List<Routine> _routines = [];
 
+  /// 외부에서 읽기만 가능하도록 getter 제공
+  List<Routine> get routines => _routines;
+
+  /// SharedPreferences에서 루틴 로드
   Future<void> loadRoutines() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('routines') ?? '[]';
     final List<dynamic> jsonList = jsonDecode(jsonString);
-    routines = jsonList.map((e) => Routine.fromJson(e)).toList();
+    _routines = jsonList.map((e) => Routine.fromJson(e)).toList();
+
+    // 샘플 데이터 자동 추가 (한 번만 실행)
+    if (_routines.isEmpty) {
+      _routines = [
+        Routine(name: '스쿼트 루틴', sets: 3, reps: 15),
+        Routine(name: '데드리프트 루틴', sets: 2, reps: 10),
+        Routine(name: '푸쉬업 루틴', sets: 4, reps: 20),
+      ];
+      final jsonList = _routines.map((e) => e.toJson()).toList();
+      prefs.setString('routines', jsonEncode(jsonList));
+    }
   }
 
+  /// 루틴 저장
   Future<void> saveRoutine(Routine routine) async {
-    routines.add(routine); // 메모리에도 추가
+    _routines.add(routine);
     final prefs = await SharedPreferences.getInstance();
-    final jsonList = routines.map((e) => e.toJson()).toList();
+    final jsonList = _routines.map((e) => e.toJson()).toList();
     prefs.setString('routines', jsonEncode(jsonList));
   }
 
+  /// 루틴 삭제
   Future<void> deleteRoutine(int index) async {
-    routines.removeAt(index);
+    _routines.removeAt(index);
     final prefs = await SharedPreferences.getInstance();
-    final jsonList = routines.map((e) => e.toJson()).toList();
+    final jsonList = _routines.map((e) => e.toJson()).toList();
     prefs.setString('routines', jsonEncode(jsonList));
   }
+
+  // SharedPreferences에서 불러오기
+  Future<List<Routine>> getRoutines() async {
+    await loadRoutines();
+    return routines;
+  }
+
+
+
 }

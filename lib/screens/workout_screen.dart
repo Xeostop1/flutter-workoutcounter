@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../models/routine.dart';
 import '../screens/routine_list_screen.dart';
 import '../view_models/workout_viewmodel.dart';
+import '../view_models/routine_viewmodel.dart';
 import '../widgets/reset_button.dart';
 import '../widgets/save_button.dart';
 import '../widgets/repeat_count_buttons.dart';
@@ -131,6 +133,52 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     });
   }
 
+  Future<void> _saveCurrentRoutine(BuildContext context) async {
+    final nameController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("루틴 이름 저장"),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: "루틴 이름",
+              hintText: "예: 하체 루틴",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("취소"),
+            ),
+            TextButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                if (name.isNotEmpty) {
+                  final routine = Routine(
+                    name: name,
+                    sets: viewModel.settings.totalSets,
+                    reps: viewModel.settings.repeatCount,
+                  );
+                  final routineVM = RoutineViewModel();
+                  await routineVM.loadRoutines();
+                  await routineVM.saveRoutine(routine);
+                }
+                Navigator.pop(context, true);
+              },
+              child: const Text("저장"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -154,7 +202,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 MaterialPageRoute(
                   builder: (context) => const RoutineListScreen(),
                 ),
-              );
+              ).then((needRefresh) {
+                if (needRefresh == true) {
+                  setState(() {}); // *** 루틴 저장 후 화면 다시 그림 ***
+                }
+              });
             },
           ),
           // ✅ 기존 설정 버튼
@@ -218,46 +270,48 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               children: [
                 ResetButton(onPressed: _resetSettings),
                 const SizedBox(width: 16),
-                SaveButton(onPressed: () {}),
+                SaveButton(
+                    Navigator.pop(context); // 다이얼로그 닫기
+                    Navigator.pop(context, true); // *** 화면으로 true 반환 ***
+                ),
+
 
               ],
             ),
             Expanded(
-              child: ListView(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                    child: Text(
-                      '저장된 루틴',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  SavedRoutineTile(
-                    title: '스쿼트',
-                    sets: 3,
-                    reps: 15,
-                    onTap: () {
-                      // TODO: 스쿼트 루틴 적용
-                      setState(() {
-                        viewModel.updateTotalSet(3);
-                        viewModel.updateRepeatCount(15);
-                      });
+              child: FutureBuilder<List<Routine>>(
+                future: RoutineViewModel().getRoutines(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('저장된 루틴이 없습니다.'));
+                  }
+
+                  final routines = snapshot.data!;
+                  return ListView.builder(
+                    itemCount: routines.length,
+                    itemBuilder: (context, index) {
+                      final r = routines[index];
+                      return SavedRoutineTile(
+                        title: r.name,
+                        sets: r.sets,
+                        reps: r.reps,
+                        onTap: () {
+                          setState(() {
+                            viewModel.updateTotalSet(r.sets);
+                            viewModel.updateRepeatCount(r.reps);
+                          });
+                        },
+                      );
                     },
-                  ),
-                  SavedRoutineTile(
-                    title: '데드리프트',
-                    sets: 2,
-                    reps: 10,
-                    onTap: () {
-                      setState(() {
-                        viewModel.updateTotalSet(2);
-                        viewModel.updateRepeatCount(10);
-                      });
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
-            )
+            ),
+
           ],
         ),
       ),

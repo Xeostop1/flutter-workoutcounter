@@ -10,20 +10,25 @@ class RoutineListScreen extends StatefulWidget {
 }
 
 class _RoutineListScreenState extends State<RoutineListScreen> {
-  final viewModel = RoutineViewModel(); // *** 뷰모델 인스턴스 ***
-  List<Routine> routines = []; // *** 화면에 보여줄 루틴 리스트 ***
+  final viewModel = RoutineViewModel();
+  List<Routine> routines = [];
 
   @override
   void initState() {
     super.initState();
-    _loadRoutines(); // *** 루틴 불러오기 ***
+    _loadRoutines();
   }
 
   Future<void> _loadRoutines() async {
-    await viewModel.loadRoutines(); // *** SharedPreferences에서 불러오기 ***
+    final loaded = await viewModel.getRoutines();
     setState(() {
-      routines = viewModel.routines; // *** 뷰모델의 루틴 참조 ***
+      routines = loaded;
     });
+  }
+
+  Future<void> _deleteRoutine(int index) async {
+    await viewModel.deleteRoutine(index);
+    _loadRoutines(); // 삭제 후 리스트 다시 불러오기
   }
 
   @override
@@ -39,10 +44,37 @@ class _RoutineListScreenState extends State<RoutineListScreen> {
           return ListTile(
             title: Text(r.name),
             subtitle: Text('${r.sets}세트 × ${r.reps}회'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: 루틴 선택 시 동작 추가 가능
-            },
+            trailing: IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('루틴 삭제'),
+                    content: const Text('이 루틴을 삭제할까요?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _deleteRoutine(index);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('루틴이 삭제되었습니다.'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           );
         },
       ),
