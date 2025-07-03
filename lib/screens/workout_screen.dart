@@ -271,9 +271,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 ResetButton(onPressed: _resetSettings),
                 const SizedBox(width: 16),
                 SaveButton(
-                    Navigator.pop(context); // 다이얼로그 닫기
-                    Navigator.pop(context, true); // *** 화면으로 true 반환 ***
+                  sets: viewModel.settings.totalSets,
+                  reps: viewModel.settings.repeatCount,
                 ),
+
 
 
               ],

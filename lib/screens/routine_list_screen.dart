@@ -20,6 +20,7 @@ class _RoutineListScreenState extends State<RoutineListScreen> {
   }
 
   Future<void> _loadRoutines() async {
+    await viewModel.loadRoutines();
     final loaded = await viewModel.getRoutines();
     setState(() {
       routines = loaded;
@@ -58,18 +59,23 @@ class _RoutineListScreenState extends State<RoutineListScreen> {
                         child: const Text('취소'),
                       ),
                       TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _deleteRoutine(index);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('루틴이 삭제되었습니다.'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
+                        onPressed: () async {
+                          Navigator.pop(context); // *** 먼저 닫기 ***
+                          await _deleteRoutine(index); // *** 삭제 후 ***
+
+                          // *** SnackBar를 안전하게 호출하기 위해 Future.microtask 사용 ***
+                          Future.microtask(() {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('루틴이 삭제되었습니다.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          });
                         },
                         child: const Text('삭제'),
                       ),
+
                     ],
                   ),
                 );
