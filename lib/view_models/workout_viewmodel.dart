@@ -47,7 +47,7 @@ void resetSettings(){
     routineId: '001',
     totalSets: 3,
     repeatCount: 10,
-    breakTime: Duration(seconds: 30),
+    breakTime: Duration(seconds: 10),
     isCountdownOn: true,
     voiceGender: VoiceGender.female,
   );

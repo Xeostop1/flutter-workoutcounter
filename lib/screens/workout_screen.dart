@@ -1,15 +1,13 @@
-
 import 'dart:async';
-import 'package:counter_01/widgets/reset_button.dart';
-import 'package:counter_01/widgets/save_button.dart';
 import 'package:flutter/material.dart';
-import '../view_models//workout_viewmodel.dart'; // ViewModel import
+import '../view_models/workout_viewmodel.dart';
+import '../widgets/reset_button.dart';
+import '../widgets/save_button.dart';
 import '../widgets/repeat_count_buttons.dart';
 import '../widgets/common_wheel_picker.dart';
 import '../widgets/workout_circle.dart';
-import 'settings_screen.dart'; // 상대 경로로 추가
-
-
+import '../widgets/saved_routine_tile.dart';
+import 'settings_screen.dart';
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
@@ -20,57 +18,49 @@ class WorkoutScreen extends StatefulWidget {
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
   final viewModel = WorkoutViewModel();
-  Timer? _timer; // *** 타이머 객체
-  int _currentSet = 1; // *** 현재 세트
-  int _currentCount = 1; // *** 현재 반복 회수
-  double _progress = 0.0; // *** 원형 진행률
-  bool _isRunning = false; // *** 타이머 실행 여부
-
-
-
-
-
-
-
+  Timer? _timer;
+  int _currentSet = 1;
+  int _currentCount = 1;
+  double _progress = 0.0;
+  bool _isRunning = false;
+  bool _isPaused = false;
+  bool _isResting = false;
+  Duration? _restTimeRemaining;
 
   void _startTimer() {
     if (_isRunning) return;
 
-    final totalReps = viewModel.settings.repeatCount;
-    final totalSets = viewModel.settings.totalSets;
-    final restSeconds = viewModel.settings.breakTime.inSeconds;
-
     setState(() {
       _isRunning = true;
+      _isPaused = false;
+      _isResting = false;
       _progress = 0.0;
-      _currentSet = _currentSet == 0 ? 1 : _currentSet; // 시작 시 1세트부터
-      _currentCount = _currentCount == 0 ? 1 : _currentCount;
+      _currentSet = 1;
+      _currentCount = 1;
     });
 
+    _startExercise();
+  }
+
+  void _startExercise() {
+    final totalReps = viewModel.settings.repeatCount;
+    final totalSets = viewModel.settings.totalSets;
+    final totalSteps = totalReps;
+
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isPaused) return;
+
       setState(() {
-        _progress = _currentCount / totalReps;
+        _isResting = false;
+        _progress = _currentCount / totalSteps;
 
         if (_currentCount < totalReps) {
           _currentCount++;
         } else {
-          // ✅ 1세트 끝
           if (_currentSet < totalSets) {
-            // 타이머 종료
-            timer.cancel();
-            _isRunning = false;
-
-            // ✅ 휴식 후 다음 세트 시작
-            Future.delayed(Duration(seconds: restSeconds), () {
-              setState(() {
-                _currentSet++;
-                _currentCount = 1;
-                _progress = 0.0;
-              });
-              _startTimer(); // 다시 시작
-            });
+            _startRest();
           } else {
-            // ✅ 전체 세트 완료
             timer.cancel();
             _isRunning = false;
             _progress = 1.0;
@@ -80,21 +70,45 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     });
   }
 
+  void _startRest() {
+    _timer?.cancel();
+    _restTimeRemaining = viewModel.settings.breakTime;
+    final totalRestSeconds = _restTimeRemaining!.inSeconds;
 
+    setState(() {
+      _isResting = true;
+      _currentCount = 1;
+      _progress = 0.0;
+    });
 
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isPaused) return;
 
+      setState(() {
+        final secondsLeft = _restTimeRemaining!.inSeconds - 1;
 
+        if (secondsLeft <= 0) {
+          timer.cancel();
+          _currentSet++;
+          _startExercise();
+        } else {
+          _restTimeRemaining = Duration(seconds: secondsLeft);
+          _progress = 1 - (secondsLeft / totalRestSeconds);
+        }
+      });
+    });
+  }
+
+  void _togglePauseResume() {
+    setState(() {
+      _isPaused = !_isPaused;
+    });
+  }
 
   void _updateRepeatCount(int newValue) {
     setState(() {
       viewModel.updateRepeatCount(newValue);
     });
-  }
-
-  void _resetSettings() {
-    setState(() {
-      viewModel.resetSettings();
-    }); // *** 수정됨: setState로 감싸줘야 화면이 갱신됨
   }
 
   void _updateTotalSet(int newValue) {
@@ -103,13 +117,24 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel(); // 화면 닫을 때 타이머 종료
-    super.dispose();
+  void _resetSettings() {
+    _timer?.cancel();
+    setState(() {
+      viewModel.resetSettings();
+      _isRunning = false;
+      _isPaused = false;
+      _isResting = false;
+      _progress = 0.0;
+      _currentSet = 1;
+      _currentCount = 1;
+    });
   }
 
-
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,27 +162,23 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-
-            // 버튼 방식 회수 선택
             RepeatCountButtons(
               selectedValue: settings.repeatCount,
               onChanged: _updateRepeatCount,
             ),
-
             const SizedBox(height: 20),
-
-            // 원형 UI
             WorkoutCircle(
               totalSets: settings.totalSets,
+              currentSet: _currentSet,
               repeatCount: settings.repeatCount,
-              restSeconds: settings.breakTime.inSeconds,
-              progress: _progress, // 수정됨
-              onStartPressed: _startTimer, // 추가됨
+              restSeconds: _restTimeRemaining?.inSeconds ?? settings.breakTime.inSeconds,
+              progress: _progress,
+              onStartPressed: _isRunning ? _togglePauseResume : _startTimer,
+              isRunning: _isRunning,
+              isPaused: _isPaused,
+              isResting: _isResting,
             ),
-
-            const SizedBox(height: 20),
-
-            // 휠피커 2개
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -167,7 +188,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   onChanged: _updateTotalSet,
                   unitLabel: '세트',
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 10),
                 CommonWheelPicker(
                   values: List.generate(20, (i) => (i + 1) * 5),
                   selectedValue: settings.repeatCount,
@@ -176,26 +197,55 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
-            // 리셋, 세이브 버튼
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ResetButton(onPressed: _resetSettings),
                 const SizedBox(width: 16),
-                SaveButton(
-                  onPressed: () {
-                    // 저장 기능은 추후 추가 예정
-                  },
-                ),
+                SaveButton(onPressed: () {}),
+
               ],
             ),
+            Expanded(
+              child: ListView(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                    child: Text(
+                      '저장된 루틴',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  SavedRoutineTile(
+                    title: '스쿼트',
+                    sets: 3,
+                    reps: 15,
+                    onTap: () {
+                      // TODO: 스쿼트 루틴 적용
+                      setState(() {
+                        viewModel.updateTotalSet(3);
+                        viewModel.updateRepeatCount(15);
+                      });
+                    },
+                  ),
+                  SavedRoutineTile(
+                    title: '데드리프트',
+                    sets: 2,
+                    reps: 10,
+                    onTap: () {
+                      setState(() {
+                        viewModel.updateTotalSet(2);
+                        viewModel.updateRepeatCount(10);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            )
           ],
         ),
       ),
     );
   }
 }
-

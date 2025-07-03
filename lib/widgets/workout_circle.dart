@@ -2,29 +2,36 @@ import 'package:flutter/material.dart';
 
 class WorkoutCircle extends StatelessWidget {
   final int totalSets;
+  final int currentSet;
   final int repeatCount;
   final int restSeconds;
   final double progress;
   final void Function()? onStartPressed;
+  final bool isRunning;
+  final bool isPaused;
+  final bool isResting;
 
   const WorkoutCircle({
     super.key,
     required this.totalSets,
+    required this.currentSet,
     required this.repeatCount,
     required this.restSeconds,
     required this.progress,
     this.onStartPressed,
+    required this.isRunning,
+    required this.isPaused,
+    required this.isResting,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 300, // ✅ 실제 원형 크기 지정
+      width: 300,
       height: 300,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // ✅ 배경 원형
           CustomPaint(
             size: const Size(300, 300),
             painter: CirclePainter(
@@ -32,38 +39,39 @@ class WorkoutCircle extends StatelessWidget {
               color: Colors.grey.shade200,
             ),
           ),
-          // ✅ 진행 원형
           CustomPaint(
             size: const Size(300, 300),
             painter: CirclePainter(
               progress: progress,
-              color: Colors.black,
+              color: isResting ? Colors.grey : Colors.black,
             ),
           ),
-          // ✅ 중앙 텍스트 및 버튼
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '$totalSets세트 $repeatCount회',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                '세트 $currentSet / $totalSets',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              Text(
+              isResting
+                  ? Text(
                 '휴식 ${restSeconds}초',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+              )
+                  : Text(
+                '$repeatCount회 반복',
+                style: const TextStyle(fontSize: 18),
               ),
               const SizedBox(height: 20),
               IconButton(
-                onPressed: onStartPressed, // ✅ 수정: 타이머 시작 함수 호출
-                icon: const Icon(Icons.play_circle_outline),
-                iconSize: 40,
-                color: Colors.black,
+                icon: Icon(
+                  isRunning
+                      ? (isPaused ? Icons.play_arrow : Icons.pause)
+                      : Icons.play_arrow,
+                ),
+                onPressed: onStartPressed,
               ),
-
             ],
           ),
         ],
@@ -90,12 +98,10 @@ class CirclePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-
-
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      -1.57, // 시작 위치 (12시 방향)
-      6.28 * progress, // 전체 원의 비율 (2 * pi * 진행도)
+      -1.57,
+      6.28 * progress,
       false,
       paint,
     );

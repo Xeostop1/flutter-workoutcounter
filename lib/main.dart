@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'screens/workout_screen.dart';// 모델 클래스 불러오기
+import 'screens/workout_screen.dart'; // ✅ 꼭 필요
 
 void main() {
-  runApp(MyApp()); // 앱 시작
+  runApp(const MyApp());
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: WorkoutScreen(),
+      title: 'Workout Counter',
+      home: WorkoutScreen(), // ✅ 오류 메시지 발생 부분
     );
   }
 }
