@@ -37,13 +37,18 @@ class SaveButton extends StatelessWidget {
               TextButton(
                 onPressed: () async {
                   final name = nameController.text.trim();
+                  print('입력된 이름확인: $name');
                   if (name.isEmpty) return;
-
+                  print('❌ 이름이 비어있어서 저장하지 않음');
                   final routine = Routine(name: name, sets: sets, reps: reps);
+                  print('📦 저장할 루틴: ${routine.name}, ${routine.sets}세트, ${routine.reps}회'); // 디버깅 로그 2
+
                   await RoutineViewModel().saveRoutine(routine);
+                  print('✅ 루틴 저장 완료'); // 디버깅 로그 3
 
                   Navigator.pop(context); // 다이얼로그 닫기
                   Navigator.pop(context, true); // ✅ 이전 화면으로 true 전달
+                  print('🚀 루틴 화면으로 true 전달하며 복귀');
                 },
                 child: const Text('저장'),
               ),

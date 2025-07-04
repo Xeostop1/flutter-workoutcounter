@@ -46,7 +46,7 @@ class _RoutineListScreenState extends State<RoutineListScreen> {
             title: Text(r.name),
             subtitle: Text('${r.sets}세트 × ${r.reps}회'),
             trailing: IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+              icon: const Icon(Icons.delete, color: Colors.grey),
               onPressed: () {
                 showDialog(
                   context: context,
@@ -75,7 +75,6 @@ class _RoutineListScreenState extends State<RoutineListScreen> {
                         },
                         child: const Text('삭제'),
                       ),
-
                     ],
                   ),
                 );

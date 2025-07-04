@@ -21,6 +21,7 @@ class WorkoutScreen extends StatefulWidget {
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
   final viewModel = WorkoutViewModel();
+  final routineVM = RoutineViewModel(); // *** 뷰모델 재사용 ***
   Timer? _timer;
   int _currentSet = 1;
   int _currentCount = 1;
@@ -29,6 +30,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   bool _isPaused = false;
   bool _isResting = false;
   Duration? _restTimeRemaining;
+
+  List<Routine> _routines = []; // *** 루틴 상태 변수 추가 ***
+
+
+  Future<void> _loadRoutines() async {
+    final loaded = await routineVM.getRoutines(); // ***
+    setState(() {
+      _routines = loaded; // ***
+    });
+  }
+
+
+
 
   void _startTimer() {
     if (_isRunning) return;
@@ -162,11 +176,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     sets: viewModel.settings.totalSets,
                     reps: viewModel.settings.repeatCount,
                   );
-                  final routineVM = RoutineViewModel();
-                  await routineVM.loadRoutines();
-                  await routineVM.saveRoutine(routine);
+                  await routineVM.saveRoutine(routine); // ***
+                  await _loadRoutines(); // *** 저장 후 바로 다시 불러오기
                 }
-                Navigator.pop(context, true);
+                Navigator.pop(context);
               },
               child: const Text("저장"),
             ),
@@ -273,6 +286,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 SaveButton(
                   sets: viewModel.settings.totalSets,
                   reps: viewModel.settings.repeatCount,
+                  onPressed: () => _saveCurrentRoutine(context), // *** 저장 버튼 연결 ***
                 ),
 
 
