@@ -41,7 +41,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     });
   }
 
-
+  @override
+  void initState() {
+    super.initState();
+    _loadRoutines(); // ✅ 앱 실행 시 루틴 불러오기
+  }
 
 
   void _startTimer() {
@@ -217,7 +221,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 ),
               ).then((needRefresh) {
                 if (needRefresh == true) {
-                  setState(() {}); // *** 루틴 저장 후 화면 다시 그림 ***
+                  _loadRoutines(); // *** 수정 후 루틴 다시 불러오기 ***
                 }
               });
             },
@@ -292,38 +296,27 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               ],
             ),
             Expanded(
-              child: FutureBuilder<List<Routine>>(
-                future: RoutineViewModel().getRoutines(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('저장된 루틴이 없습니다.'));
-                  }
-
-                  final routines = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: routines.length,
-                    itemBuilder: (context, index) {
-                      final r = routines[index];
-                      return SavedRoutineTile(
-                        title: r.name,
-                        sets: r.sets,
-                        reps: r.reps,
-                        onTap: () {
-                          setState(() {
-                            viewModel.updateTotalSet(r.sets);
-                            viewModel.updateRepeatCount(r.reps);
-                          });
-                        },
-                      );
+              child: _routines.isEmpty // ***
+                  ? const Center(child: Text('저장된 루틴이 없습니다.')) // ***
+                  : ListView.builder(
+                itemCount: _routines.length, // ***
+                itemBuilder: (context, index) {
+                  final r = _routines[index]; // ***
+                  return SavedRoutineTile(
+                    title: r.name,
+                    sets: r.sets,
+                    reps: r.reps,
+                    onTap: () {
+                      setState(() {
+                        viewModel.updateTotalSet(r.sets);
+                        viewModel.updateRepeatCount(r.reps);
+                      });
                     },
                   );
                 },
               ),
             ),
+
 
           ],
         ),

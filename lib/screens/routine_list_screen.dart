@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/routine.dart';
 import '../../view_models/routine_viewmodel.dart';
+import '../widgets/edit_routine_dialog.dart';
+
 
 class RoutineListScreen extends StatefulWidget {
   const RoutineListScreen({super.key});
@@ -45,44 +47,74 @@ class _RoutineListScreenState extends State<RoutineListScreen> {
           return ListTile(
             title: Text(r.name),
             subtitle: Text('${r.sets}세트 × ${r.reps}회'),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete, color: Colors.grey),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('루틴 삭제'),
-                    content: const Text('이 루틴을 삭제할까요?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('취소'),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          Navigator.pop(context); // *** 먼저 닫기 ***
-                          await _deleteRoutine(index); // *** 삭제 후 ***
-
-                          // *** SnackBar를 안전하게 호출하기 위해 Future.microtask 사용 ***
-                          Future.microtask(() {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('루틴이 삭제되었습니다.'),
-                                duration: Duration(seconds: 2),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) =>
+                          EditRoutineDialog(
+                            routine: r,
+                            onConfirm: (updated) async {
+                              await viewModel.updateRoutine(
+                                  index, updated); // *** 수정 반영 ***
+                              _loadRoutines(); // 리스트 다시 불러오기
+                              Navigator.pop(context, true); // ✅ 수정 완료 후 true 반환
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('루틴이 수정되었습니다.'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.grey),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) =>
+                          AlertDialog(
+                            title: const Text('루틴 삭제'),
+                            content: const Text('이 루틴을 삭제할까요?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('취소'),
                               ),
-                            );
-                          });
-                        },
-                        child: const Text('삭제'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                              TextButton(
+                                onPressed: () async {
+                                  Navigator.pop(context);
+                                  await _deleteRoutine(index);
+                                  Future.microtask(() {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('루틴이 삭제되었습니다.'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                    Navigator.pop(context, true);
+                                  });
+                                },
+                                child: const Text('삭제'),
+                              ),
+                            ],
+                          ),
+                    );
+                  },
+                ),
+              ],
+            ), // *** Row 닫기 ***
           );
         },
       ),
     );
   }
 }
+

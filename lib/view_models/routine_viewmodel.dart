@@ -27,14 +27,6 @@ class RoutineViewModel {
     }
   }
 
-  /// 루틴 저장
-  // Future<void> saveRoutine(Routine routine) async {
-  //   _routines.add(routine);
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final jsonList = _routines.map((e) => e.toJson()).toList();
-  //   prefs.setString('routines', jsonEncode(jsonList));
-  // }
-
   Future<void> saveRoutine(Routine routine) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('routines') ?? '[]';
@@ -57,11 +49,7 @@ class RoutineViewModel {
     prefs.setString('routines', jsonEncode(jsonList));
   }
 
-  // SharedPreferences에서 불러오기
-  // Future<List<Routine>> getRoutines() async {
-  //   await loadRoutines();
-  //   return routines;
-  // }
+
   Future<List<Routine>> getRoutines() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('routines') ?? '[]';
@@ -74,6 +62,23 @@ class RoutineViewModel {
       return [];
     }
   }
+
+  Future<void> updateRoutine(int index, Routine updatedRoutine) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('routines') ?? '[]';
+    final List<dynamic> jsonList = jsonDecode(jsonString);
+    final List<Routine> loaded = jsonList.map((e) => Routine.fromJson(e)).toList();
+
+    if (index < 0 || index >= loaded.length) return;
+
+    loaded[index] = updatedRoutine; // *** 루틴 업데이트 ***
+
+    final updatedJson = jsonEncode(loaded.map((e) => e.toJson()).toList());
+    await prefs.setString('routines', updatedJson);
+  }
+
+
+
 
 
 }
