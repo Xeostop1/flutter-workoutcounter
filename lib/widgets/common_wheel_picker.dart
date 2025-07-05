@@ -1,9 +1,12 @@
-// 아래처럼 최종적으로 남기고 저장하면 됨
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 class CommonWheelPicker extends StatelessWidget {
   final List<int> values;
   final int selectedValue;
   final ValueChanged<int> onChanged;
   final String unitLabel;
+
 
   const CommonWheelPicker({
     super.key,
@@ -11,6 +14,7 @@ class CommonWheelPicker extends StatelessWidget {
     required this.selectedValue,
     required this.onChanged,
     required this.unitLabel,
+
   });
 
   @override
@@ -23,9 +27,14 @@ class CommonWheelPicker extends StatelessWidget {
           initialItem: values.indexOf(selectedValue),
         ),
         itemExtent: 40,
-        onSelectedItemChanged: (index) => onChanged(values[index]),
+        onSelectedItemChanged:(index){
+          onChanged(values[index]);
+        },
         children: values
-            .map((value) => Center(child: Text('$value $unitLabel')))
+            .map((value) => Center(
+          child: Text('$value$unitLabel',
+              style: const TextStyle(fontSize: 20)),
+        ))
             .toList(),
       ),
     );

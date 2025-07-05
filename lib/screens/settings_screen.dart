@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../view_models/tts_viewmodel.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,10 +11,31 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool isFemale = true;
+  bool isTtsOn = true;
   bool isDelayOn = false;
   int restSeconds = 10;
 
   final List<int> restValues = List.generate(20, (i) => i + 1); // 1~20초
+  final ttsVM = TtsViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings(); // *** 초기 설정 불러오기 ***
+  }
+
+  Future<void> _loadSettings() async {
+    final settings = await ttsVM.loadSettings(); // 모델 불러오기
+    setState(() {
+      isFemale = settings.isFemale;
+      isTtsOn = settings.isOn;
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    await ttsVM.saveSettings(isFemale: isFemale, isOn: isTtsOn);
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +53,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              const Text('Voice', style: TextStyle(fontSize: 18)),
-              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Voice', style: TextStyle(fontSize: 18)),
+
+                  // *** TTS On/Off 스위치 ***
+                  Row(
+                    children: [
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: isTtsOn,
+                        onChanged: (val) {
+                          setState(() {
+                            isTtsOn = val;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -42,8 +83,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: 40),
-
-              // ✅ Delay
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
