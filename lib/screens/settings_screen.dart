@@ -21,11 +21,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSettings(); // *** 초기 설정 불러오기 ***
+    _loadSettings(); // ✅ 초기 설정 불러오기
   }
 
   Future<void> _loadSettings() async {
-    final settings = await ttsVM.loadSettings(); // 모델 불러오기
+    final settings = await ttsVM.loadSettings();
     setState(() {
       isFemale = settings.isFemale;
       isTtsOn = settings.isOn;
@@ -46,47 +46,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 뒤로가기 버튼
               IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.pop(context),
               ),
+
               const SizedBox(height: 16),
+
+              // ✅ TTS 전체 설정 제목 + 스위치
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Voice', style: TextStyle(fontSize: 18)),
-
-                  // *** TTS On/Off 스위치 ***
-                  Row(
-                    children: [
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: isTtsOn,
-                        onChanged: (val) {
-                          setState(() {
-                            isTtsOn = val;
-                          });
-                        },
-                      ),
-                    ],
+                  const Text('음성 안내 ', style: TextStyle(fontSize: 18)),
+                  Switch(
+                    value: isTtsOn,
+                    onChanged: (val) {
+                      setState(() {
+                        isTtsOn = val;
+                      });
+                    },
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+
+              // ✅ 성별 선택
+              const Text('성별 선택', style: TextStyle(fontSize: 18)),
+              const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   _buildVoiceButton(true, '여성'),
                   const SizedBox(width: 16),
                   _buildVoiceButton(false, '남성'),
                 ],
               ),
-              const SizedBox(height: 40),
+
+              const SizedBox(height: 32),
+
+              // ✅ Delay
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Delay', style: TextStyle(fontSize: 18)),
+                  const Text('지연 안내 (Delay)', style: TextStyle(fontSize: 18)),
                   Switch(
                     value: isDelayOn,
                     onChanged: (val) {
@@ -97,10 +99,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
 
-              // ✅ 휴식 휠피커
-              const Text('휴식', style: TextStyle(fontSize: 18)),
+              const SizedBox(height: 32),
+
+              // ✅ 휴식 시간
+              const Text('휴식 시간 (초)', style: TextStyle(fontSize: 18)),
               const SizedBox(height: 12),
               SizedBox(
                 height: 120,
@@ -121,11 +124,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       .toList(),
                 ),
               ),
+
               const Spacer(),
 
               // ✅ 저장 버튼
               Center(
                 child: ElevatedButton(
+                  onPressed: _saveSettings,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
@@ -134,9 +139,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   ),
-                  onPressed: () {
-                    // TODO: 저장 기능 구현
-                  },
                   child: const Text('Save', style: TextStyle(fontSize: 18)),
                 ),
               ),
@@ -147,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ✅ Voice 선택 버튼 위젯
+  // ✅ 성별 버튼 위젯
   Widget _buildVoiceButton(bool female, String label) {
     final isSelected = isFemale == female;
     return Expanded(

@@ -54,19 +54,40 @@ class TtsViewModel {
   // ✅ 설정 적용
   Future<void> _applySettings() async {
     if (!_settings.isEnabled) return;
+
+    print('[TTS] applySettings - language: en-US');
     await _tts.setLanguage('en-US');
-    await _tts.setVoice({
-      "name": _settings.voiceGender == VoiceGender.female
-          ? "en-US-language_female"
-          : "en-US-language_male"
-    });
+
+    // ✅ setVoice는 Android에서 미지원일 수 있으므로 주석 처리 또는 삭제
+    // await _tts.setVoice({
+    //   "name": _settings.voiceGender == VoiceGender.female
+    //       ? "en-US-language_female"
+    //       : "en-US-language_male"
+    // });
   }
 
+  Future<void> printAvailableVoices() async {
+    final voices = await _tts.getVoices;
+    print('[TTS] 기기에서 사용 가능한 음성 목록:');
+    for (var voice in voices) {
+      print(voice); // Map 형태로 출력됨
+    }
+  }
+
+
   // ✅ 음성 출력
+  // Future<void> speak(String text) async {
+  //   if (!_settings.isEnabled) return;
+  //   await _tts.speak(text);
+  // }
   Future<void> speak(String text) async {
     if (!_settings.isEnabled) return;
+
+    print('[TTS] speak: $text');
+    await _tts.setLanguage('en-US');
     await _tts.speak(text);
   }
+
 
   Future<void> stop() async {
     await _tts.stop();

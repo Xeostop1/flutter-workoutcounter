@@ -11,6 +11,7 @@ import '../widgets/common_wheel_picker.dart';
 import '../widgets/workout_circle.dart';
 import '../widgets/saved_routine_tile.dart';
 import 'settings_screen.dart';
+import '../view_models/tts_viewmodel.dart';
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
@@ -22,6 +23,8 @@ class WorkoutScreen extends StatefulWidget {
 class _WorkoutScreenState extends State<WorkoutScreen> {
   final viewModel = WorkoutViewModel();
   final routineVM = RoutineViewModel(); // *** 뷰모델 재사용 ***
+  final TtsViewModel ttsVM = TtsViewModel(); // ★ TTS 뷰모델 인스턴스 추가
+
   Timer? _timer;
   int _currentSet = 1;
   int _currentCount = 1;
@@ -45,6 +48,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   void initState() {
     super.initState();
     _loadRoutines(); // ✅ 앱 실행 시 루틴 불러오기
+    TtsViewModel().printAvailableVoices(); // 디버깅용 호출
   }
 
 
@@ -69,6 +73,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final totalSteps = totalReps;
 
     _timer?.cancel();
+    // ★★ 운동 시작 안내 음성
+    print('[TTS] 운동 시작: 세트 $totalSets, 반복 $totalReps');
+    ttsVM.speak("${_currentSet}세트 시작. 1회"); // 예: 1세트 시작. 1회
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_isPaused) return;
 
@@ -78,6 +86,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
         if (_currentCount < totalReps) {
           _currentCount++;
+          // ★★ 반복 중 음성 안내 (예: "2회")
+          ttsVM.speak("$_currentCount회");
         } else {
           if (_currentSet < totalSets) {
             _startRest();
@@ -85,6 +95,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             timer.cancel();
             _isRunning = false;
             _progress = 1.0;
+            // ★★ 운동 종료 안내
+            ttsVM.speak("운동이 끝났습니다");
           }
         }
       });
@@ -112,6 +124,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           timer.cancel();
           _currentSet++;
           _startExercise();
+          // ✅ 디버깅용 로그 및 TTS 출력
+          print('[TTS] 다음 세트 시작: 세트 $_currentSet');
+          ttsVM.speak('세트 $_currentSet 시작합니다.');
         } else {
           _restTimeRemaining = Duration(seconds: secondsLeft);
           _progress = 1 - (secondsLeft / totalRestSeconds);
