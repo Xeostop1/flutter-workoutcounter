@@ -11,10 +11,16 @@ class WorkoutViewModel{
     routineId: '001',
     totalSets: 3,
     repeatCount: 10,
-    breakTime: Duration(seconds: 30),
+    breakTime: Duration(seconds: 10),
     isCountdownOn: true,
     voiceGender: VoiceGender.female,
   );
+
+
+  // 총 세트 수 업데이트 함수 ***
+  void updateTotalSet(int newValue) {
+    settings = settings.copyWith(totalSets: newValue);
+  }
 
 
   // 반복 횟수 증가
@@ -41,7 +47,7 @@ void resetSettings(){
     routineId: '001',
     totalSets: 3,
     repeatCount: 10,
-    breakTime: Duration(seconds: 30),
+    breakTime: Duration(seconds: 10),
     isCountdownOn: true,
     voiceGender: VoiceGender.female,
   );
