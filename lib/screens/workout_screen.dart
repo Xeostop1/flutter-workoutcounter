@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/routine.dart';
 import '../screens/routine_list_screen.dart';
+import '../view_models/tts_viewmodel.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../view_models/routine_viewmodel.dart';
 import '../widgets/reset_button.dart';
@@ -22,6 +23,9 @@ class WorkoutScreen extends StatefulWidget {
 class _WorkoutScreenState extends State<WorkoutScreen> {
   final viewModel = WorkoutViewModel();
   final routineVM = RoutineViewModel(); // *** 뷰모델 재사용 ***
+  final TtsViewModel _ttsViewModel = TtsViewModel(); // *** TTS 뷰모델 선언 ***
+
+
   Timer? _timer;
   int _currentSet = 1;
   int _currentCount = 1;
@@ -48,7 +52,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
 
-  void _startTimer() {
+  void _startTimer() async {
     if (_isRunning) return;
 
     setState(() {
@@ -60,8 +64,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _currentCount = 1;
     });
 
-    _startExercise();
+    // ✅ 운동 시작 음성 안내
+    final speakText = 'Start workout. Set $_currentSet. ${viewModel.settings.repeatCount} reps.';
+    print('[TTS] 시작 음성: $speakText');
+
+
+    await _ttsViewModel.initTts(); // 언어 설정 등 초기화
+    await _ttsViewModel.stop(); //  재생 중인 음성 중단
+    await _ttsViewModel.speak(speakText); // 음성 출력
+
+    _startExercise(); // 운동 시작
   }
+
 
   void _startExercise() {
     final totalReps = viewModel.settings.repeatCount;

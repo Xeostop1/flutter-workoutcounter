@@ -1,6 +1,7 @@
 // ChangeNotifier 상속: 상태가 바뀌면 화면에 알리는 flutter 기능
 import 'package:counter_01/models/workout_settings.dart';
 import 'package:flutter/material.dart';
+import '../models/voice_gender.dart';
 
 //상태 저장용 변수
 //게터
