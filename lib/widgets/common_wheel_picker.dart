@@ -26,10 +26,10 @@ class CommonWheelPicker extends StatelessWidget {
         scrollController: FixedExtentScrollController(
           initialItem: values.indexOf(selectedValue),
         ),
-          itemExtent: 40,
-          onSelectedItemChanged:(index){
-            onChanged(values[index]);
-          },
+        itemExtent: 40,
+        onSelectedItemChanged:(index){
+          onChanged(values[index]);
+        },
         children: values
             .map((value) => Center(
           child: Text('$value$unitLabel',

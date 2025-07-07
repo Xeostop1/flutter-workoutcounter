@@ -23,8 +23,7 @@ class WorkoutScreen extends StatefulWidget {
 class _WorkoutScreenState extends State<WorkoutScreen> {
   final viewModel = WorkoutViewModel();
   final routineVM = RoutineViewModel(); // *** 뷰모델 재사용 ***
-  final TtsViewModel _ttsViewModel = TtsViewModel(); // *** TTS 뷰모델 선언 ***
-
+  final TtsViewModel _ttsViewModel = TtsViewModel();
 
   Timer? _timer;
   int _currentSet = 1;
@@ -49,10 +48,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   void initState() {
     super.initState();
     _loadRoutines(); // ✅ 앱 실행 시 루틴 불러오기
+
+    _ttsViewModel.saveSettings(
+      isFemale: true,
+      isOn: true,
+    );
+
+
   }
 
 
-  void _startTimer() async {
+  void _startTimer() {
     if (_isRunning) return;
 
     setState(() {
@@ -64,18 +70,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _currentCount = 1;
     });
 
-    // ✅ 운동 시작 음성 안내
-    final speakText = 'Start workout. Set $_currentSet. ${viewModel.settings.repeatCount} reps.';
-    print('[TTS] 시작 음성: $speakText');
-
-
-    await _ttsViewModel.initTts(); // 언어 설정 등 초기화
-    await _ttsViewModel.stop(); //  재생 중인 음성 중단
-    await _ttsViewModel.speak(speakText); // 음성 출력
-
-    _startExercise(); // 운동 시작
+    _startExercise();
   }
-
 
   void _startExercise() {
     final totalReps = viewModel.settings.repeatCount;
@@ -116,6 +112,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _progress = 0.0;
     });
 
+
+
+
+    // ✅ 휴식 타이머 시작
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_isPaused) return;
 
@@ -133,6 +133,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       });
     });
   }
+
 
   void _togglePauseResume() {
     setState(() {
