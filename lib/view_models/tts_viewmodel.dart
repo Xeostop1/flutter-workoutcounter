@@ -117,7 +117,11 @@ class TtsViewModel {
 
 
 
-  Future<void> speakCountSequence(int repeatCount, {int delayMillis = 1000}) async {
+  Future<void> speakCountSequence(
+      int repeatCount, {
+        int delayMillis = 1000,
+        void Function(int count)? onCount,
+      }) async {
     if (!_settings.isEnabled) {
       print('[TTS] 비활성화 상태로 스피킹 생략');
       return;
@@ -126,8 +130,12 @@ class TtsViewModel {
     print('[TTS] 세트 카운트 시작: 1~$repeatCount');
 
     for (int i = 0; i < repeatCount; i++) {
+      final count = i + 1;
       final word = numberWords[i];
-      print('[TTS] [$i] → $word');
+      print('[TTS] [$count] → $word');
+
+      // ✅ 콜백으로 화면 업데이트
+      if (onCount != null) onCount(count);
 
       await _tts.speak(word);
       await Future.delayed(Duration(milliseconds: delayMillis));
@@ -135,5 +143,6 @@ class TtsViewModel {
 
     print('[TTS] 세트 카운트 종료');
   }
+
 
 }

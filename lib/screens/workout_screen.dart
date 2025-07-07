@@ -73,32 +73,37 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     _startExercise();
   }
 
-  void _startExercise() {
+  void _startExercise() async {
     final totalReps = viewModel.settings.repeatCount;
     final totalSets = viewModel.settings.totalSets;
     final totalSteps = totalReps;
 
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_isPaused) return;
 
+    // ✅ TTS + 화면 같이 동기화
+    await _ttsViewModel.loadSettings();
+    await _ttsViewModel.initTts();
+    await _ttsViewModel.speakCountSequence(
+      totalReps,
+      delayMillis: 1000,
+      onCount: (count) {
+        setState(() {
+          _isResting = false;
+          _currentCount = count;
+          _progress = count / totalSteps;
+        });
+      },
+    );
+
+    // ✅ TTS 끝나고 다음 세트 or 종료
+    if (_currentSet < totalSets) {
+      _startRest();
+    } else {
       setState(() {
-        _isResting = false;
-        _progress = _currentCount / totalSteps;
-
-        if (_currentCount < totalReps) {
-          _currentCount++;
-        } else {
-          if (_currentSet < totalSets) {
-            _startRest();
-          } else {
-            timer.cancel();
-            _isRunning = false;
-            _progress = 1.0;
-          }
-        }
+        _isRunning = false;
+        _progress = 1.0;
       });
-    });
+    }
   }
 
   void _startRest() {
@@ -112,9 +117,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _progress = 0.0;
     });
 
-
-
-
     // ✅ 휴식 타이머 시작
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_isPaused) return;
@@ -125,7 +127,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         if (secondsLeft <= 0) {
           timer.cancel();
           _currentSet++;
-          _startExercise();
+          _startExercise(); // → 여기에 다시 TTS 포함됨
         } else {
           _restTimeRemaining = Duration(seconds: secondsLeft);
           _progress = 1 - (secondsLeft / totalRestSeconds);
@@ -133,6 +135,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       });
     });
   }
+
 
 
   void _togglePauseResume() {
