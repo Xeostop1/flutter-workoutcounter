@@ -1,8 +1,10 @@
+// lib/widgets/workout_circle.dart
 import 'package:flutter/material.dart';
 
-class WorkoutCircle extends StatelessWidget {
+class WorkoutCircle extends StatefulWidget {
   final int totalSets;
   final int currentSet;
+  final int currentCount;
   final int repeatCount;
   final int restSeconds;
   final double progress;
@@ -11,11 +13,13 @@ class WorkoutCircle extends StatelessWidget {
   final bool isRunning;
   final bool isPaused;
   final bool isResting;
+  final Duration animationDuration;
 
   const WorkoutCircle({
     super.key,
     required this.totalSets,
     required this.currentSet,
+    required this.currentCount,
     required this.repeatCount,
     required this.restSeconds,
     required this.progress,
@@ -24,64 +28,122 @@ class WorkoutCircle extends StatelessWidget {
     required this.isRunning,
     required this.isPaused,
     required this.isResting,
+    this.animationDuration = const Duration(milliseconds: 500),
   });
+
+  @override
+  _WorkoutCircleState createState() => _WorkoutCircleState();
+}
+
+class _WorkoutCircleState extends State<WorkoutCircle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // controller 초기값을 widget.progress로 세팅
+    _controller = AnimationController(
+      vsync: this,
+      lowerBound: 0,
+      upperBound: 1,
+      duration: widget.animationDuration,
+      value: widget.progress,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant WorkoutCircle old) {
+    super.didUpdateWidget(old);
+    if (old.progress != widget.progress) {
+      // 이전 값에서 새 값으로 부드럽게 애니메이트
+      _controller.animateTo(
+        widget.progress,
+        duration: widget.animationDuration,
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 300,
       height: 300,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: const Size(300, 300),
-            painter: CirclePainter(
-              progress: 1.0,
-              color: Colors.grey.shade200,
-            ),
-          ),
-          CustomPaint(
-            size: const Size(300, 300),
-            painter: CirclePainter(
-              progress: progress,
-              color: isResting ? Colors.grey : Colors.black,
-            ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final animValue = _controller.value;
+          return Stack(
+            alignment: Alignment.center,
             children: [
-              Text(
-                '세트 $currentSet / $totalSets',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              isResting
-                  ? Text(
-                '휴식 ${restSeconds}초',
-                style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-              )
-                  : Text(
-                '$repeatCount회 반복',
-                style: const TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 20),
-              IconButton(
-                icon: Icon(
-                  isRunning
-                      ? (isPaused ? Icons.play_arrow : Icons.pause)
-                      : Icons.play_arrow,
+              // 배경 원형
+              CustomPaint(
+                size: const Size(300, 300),
+                painter: CirclePainter(
+                  progress: 1.0,
+                  color: Colors.grey.shade200,
                 ),
-                onPressed: (){
-                  print('[WorkoutCircle] onStartPressed 호출 (isRunning=$isRunning isPaused=$isPaused)'); // ***
-                  if (onStartPressed != null) onStartPressed!(); // *** 부모 콜백 무조건 호출 ***
-                },
+              ),
+              // 진행 원형
+              CustomPaint(
+                size: const Size(300, 300),
+                painter: CirclePainter(
+                  progress: animValue,
+                  color: widget.isResting ? Colors.grey : Colors.black,
+                ),
+              ),
+              // 중앙 UI
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '세트 ${widget.currentSet} / ${widget.totalSets}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  widget.isResting
+                      ? Text(
+                    '휴식 ${widget.restSeconds}초',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey.shade600,
+                    ),
+                  )
+                      : Text(
+                    '${widget.currentCount}회',
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 20),
+                  IconButton(
+                    icon: Icon(
+                      widget.isRunning
+                          ? (widget.isPaused ? Icons.play_arrow : Icons.pause)
+                          : Icons.play_arrow,
+                    ),
+                    onPressed: widget.onStartPressed,
+                  ),
+                  if (widget.onStopPressed != null)
+                    IconButton(
+                      icon: const Icon(Icons.stop),
+                      onPressed: widget.onStopPressed,
+                    ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
 
@@ -96,7 +158,6 @@ class CirclePainter extends CustomPainter {
     final strokeWidth = 20.0;
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
-
     final paint = Paint()
       ..color = color
       ..strokeWidth = strokeWidth
@@ -105,13 +166,14 @@ class CirclePainter extends CustomPainter {
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      -1.57,
-      6.28 * progress,
+      -1.57, // 12시 방향부터 시작
+      2 * 3.1415926535 * progress,
       false,
       paint,
     );
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CirclePainter old) =>
+      old.progress != progress || old.color != color;
 }

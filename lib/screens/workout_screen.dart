@@ -5,6 +5,7 @@ import '../screens/routine_list_screen.dart';
 import '../view_models/tts_viewmodel.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../view_models/routine_viewmodel.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/reset_button.dart';
 import '../widgets/save_button.dart';
 import '../widgets/repeat_count_buttons.dart';
@@ -38,9 +39,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   List<Routine> _routines = []; // *** 루틴 상태 변수 추가 ***
 
 
-   // *** Stop 상태: 운동은 끝났으나, 현재 세트/회차는 기억됨 ***
+  // *** Stop 상태: 운동은 끝났으나, 현재 세트/회차는 기억됨 ***
 
-    /// 완전 정지: 타이머 종료하고, isRunning=false 로 전환
+  /// 완전 정지: 타이머 종료하고, isRunning=false 로 전환
   void _stopWorkout() {
     _timer?.cancel();           // 타이머만 멈추고
     _ttsViewModel.stop();       // TTS도 멈춥니다
@@ -314,6 +315,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               totalSets: settings.totalSets,
               currentSet: _currentSet,
               repeatCount: settings.repeatCount,
+              currentCount: _currentCount,
               restSeconds: _restTimeRemaining?.inSeconds ?? settings.breakTime.inSeconds,
               progress: _progress,
               onStartPressed: _isRunning ? _togglePauseResume : _startTimer,
@@ -377,7 +379,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 },
               ),
             ),
-
+            const BannerAdWidget(),
 
           ],
         ),

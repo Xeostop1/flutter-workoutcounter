@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'screens/workout_screen.dart'; // ✅ 꼭 필요
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'screens/workout_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); // 반드시 맨 앞에!
+  MobileAds.instance.initialize();           // AdMob SDK 초기화
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -11,7 +15,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Workout Counter',
-      home: WorkoutScreen(), // ✅ 오류 메시지 발생 부분
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const WorkoutScreen(),
     );
   }
 }
