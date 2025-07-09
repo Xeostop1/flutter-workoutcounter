@@ -1,75 +1,132 @@
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tts_settings.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
 
 class TtsViewModel {
   final FlutterTts _tts = FlutterTts();
 
+  // 설정 모델 사용
   TtsSettings _settings = TtsSettings(
     isEnabled: false,
-    voiceGender: VoiceGender.female, // ⚠️ 유지하지만 사용 X
+    voiceGender: VoiceGender.female,
   );
 
   TtsSettings get settings => _settings;
 
-  static const String _keyIsEnabled = 't                                                                                                                                                                                               ts_is_enabled';
-  static const String _keyVoiceGender = 'tts_voice_gender';
+  // 숫자 텍스트 리스트 (1~100)
+  List<String> numberWords = [];
+  // SharedPreferences 저장 키 이름
+  static const String _keyIsEnabled = 'tts_is_enabled';           //####
+  static const String _keyVoiceGender = 'tts_voice_gender';       //####
 
+  // 초기 TTS 설정
+  Future<void> initTts() async {
+    await _tts.setLanguage('en-US');    //tts 디폴트 설정
+    await _tts.setSpeechRate(1.0);      //tts 디폴트 설정
+    await _tts.setPitch(1.0);           //tts 디폴트 설정
+    await loadNumberWordsFromJson(); // *** JSON 불러오기 추가
+  }
+
+  // 말하기
+  Future<void> speak(String text) async {
+    if (!_settings.isEnabled) return;       // TTS 꺼져 있으면 종료
+    print('[TTS] speak: $text');
+    _tts.speak(text);                       // *** await 제거: 비동기 호출로 UI 지연 방지 ***
+  }
+
+  // 멈추기
+  Future<void> stop() async {
+    await _tts.stop();
+  }
+
+  // 설정 불러오기
   Future<TtsSettings> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final isEnabled = prefs.getBool(_keyIsEnabled) ?? false;
+    final genderString = prefs.getString(_keyVoiceGender) ?? 'female';
 
     _settings = TtsSettings(
       isEnabled: isEnabled,
-      voiceGender: VoiceGender.female, // ⚠️ 더 이상 의미 없음
+      voiceGender:
+      genderString == 'female' ? VoiceGender.female : VoiceGender.male,
     );
 
     await _applySettings();
     return _settings;
   }
 
+  // 설정 저장하기
   Future<void> saveSettings({
     required bool isFemale,
     required bool isOn,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyIsEnabled, isOn);
+    await prefs.setString(_keyVoiceGender, isFemale ? 'female' : 'male');
 
     _settings = TtsSettings(
       isEnabled: isOn,
-      voiceGender: VoiceGender.female, // ⚠️ 더 이상 의미 없음
+      voiceGender: isFemale ? VoiceGender.female : VoiceGender.male,
     );
 
     await _applySettings();
   }
 
+  // 설정 적용
   Future<void> _applySettings() async {
     if (!_settings.isEnabled) return;
-
+    print('[TTS] applySettings - language: en-US');
     await _tts.setLanguage('en-US');
 
-    // ✅ 성별 voice 설정 제거
-    // await _tts.setVoice(...) 제거
   }
 
-  Future<void> speak(String text) async {
-    if (!_settings.isEnabled) return;
-
-    print('[TTS] speak: $text');
-    await _tts.setLanguage('en-US');
-    await _tts.speak(text);
-  }
-
-  Future<void> stop() async {
-    await _tts.stop();
-  }
-
-  // ✅ 디버깅용 음성 목록 출력
+  // 사용 가능한 음성 목록 출력 디버깅용
   Future<void> printAvailableVoices() async {
     final voices = await _tts.getVoices;
-    print('[TTS] 사용 가능한 음성 목록:');
+    print('[TTS] 기기에서 사용 가능한 음성 목록:');
     for (var voice in voices) {
       print(voice);
     }
   }
+
+  // *** JSON에서 숫자 단어 목록 불러오기
+  Future<void> loadNumberWordsFromJson() async {
+    final String jsonString = await rootBundle.loadString('assets/number_words.json'); // *** 파일 로드
+    final List<dynamic> jsonList = json.decode(jsonString); // *** JSON 파싱
+    numberWords = jsonList.cast<String>(); // *** String 리스트로 변환
+    print('[TTS] 불러온 숫자 단어 수: ${numberWords.length}');
+  }
+
+
+
+  Future<void> speakCountSequence(
+      int repeatCount, {
+        int delayMillis = 1000,
+        void Function(int count)? onCount,
+      }) async {
+    if (!_settings.isEnabled) {
+      print('[TTS] 비활성화 상태로 스피킹 생략');
+      return;
+    }
+
+    print('[TTS] 세트 카운트 시작: 1~$repeatCount');
+
+    for (int i = 0; i < repeatCount; i++) {
+      final count = i + 1;
+      final word = numberWords[i];
+      print('[TTS] [$count] → $word');
+
+      // ✅ 콜백으로 화면 업데이트
+      if (onCount != null) onCount(count);
+
+      _tts.speak(word);
+      await Future.delayed(Duration(milliseconds: delayMillis));
+    }
+
+    print('[TTS] 세트 카운트 종료');
+  }
+
+
 }

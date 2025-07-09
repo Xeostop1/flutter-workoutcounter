@@ -1,10 +1,8 @@
 
-enum VoiceGender {
-  male,
-  female,
-}
 
 //모델
+import 'package:counter_01/models/voice_gender.dart';
+
 class WorkoutSettings{
   final String routineId;
   int totalSets, repeatCount;

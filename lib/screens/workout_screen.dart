@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/routine.dart';
 import '../screens/routine_list_screen.dart';
+import '../view_models/tts_viewmodel.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../view_models/routine_viewmodel.dart';
 import '../widgets/reset_button.dart';
@@ -11,7 +12,6 @@ import '../widgets/common_wheel_picker.dart';
 import '../widgets/workout_circle.dart';
 import '../widgets/saved_routine_tile.dart';
 import 'settings_screen.dart';
-import '../view_models/tts_viewmodel.dart';
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
@@ -22,8 +22,8 @@ class WorkoutScreen extends StatefulWidget {
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
   final viewModel = WorkoutViewModel();
-  final routineVM = RoutineViewModel(); // *** 뷰모델 재사용 ***
-  final TtsViewModel ttsVM = TtsViewModel(); // ★ TTS 뷰모델 인스턴스 추가
+  final routineVM = RoutineViewModel();
+  final TtsViewModel _ttsViewModel = TtsViewModel();
 
   Timer? _timer;
   int _currentSet = 1;
@@ -38,9 +38,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
 
   Future<void> _loadRoutines() async {
-    final loaded = await routineVM.getRoutines(); // ***
+    final loaded = await routineVM.getRoutines();
     setState(() {
-      _routines = loaded; // ***
+      _routines = loaded;
     });
   }
 
@@ -48,7 +48,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   void initState() {
     super.initState();
     _loadRoutines(); // ✅ 앱 실행 시 루틴 불러오기
-    TtsViewModel().printAvailableVoices(); // 디버깅용 호출
+
+    _ttsViewModel.saveSettings(
+      isFemale: true,
+      isOn: true,
+    );
+
+
   }
 
 
@@ -67,40 +73,37 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     _startExercise();
   }
 
-  void _startExercise() {
+  void _startExercise() async {
     final totalReps = viewModel.settings.repeatCount;
     final totalSets = viewModel.settings.totalSets;
     final totalSteps = totalReps;
 
     _timer?.cancel();
-    // ★★ 운동 시작 안내 음성
-    print('[TTS] 운동 시작: 세트 $totalSets, 반복 $totalReps');
-    ttsVM.speak("${_currentSet}세트 시작. 1회"); // 예: 1세트 시작. 1회
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_isPaused) return;
+    // ✅ TTS + 화면 같이 동기화
+    await _ttsViewModel.loadSettings();
+    await _ttsViewModel.initTts();
+    await _ttsViewModel.speakCountSequence(
+      totalReps,
+      delayMillis: 1000,
+      onCount: (count) {
+        setState(() {
+          _isResting = false;
+          _currentCount = count;
+          _progress = count / totalSteps;
+        });
+      },
+    );
 
+    // ✅ TTS 끝나고 다음 세트 or 종료
+    if (_currentSet < totalSets) {
+      _startRest();
+    } else {
       setState(() {
-        _isResting = false;
-        _progress = _currentCount / totalSteps;
-
-        if (_currentCount < totalReps) {
-          _currentCount++;
-          // ★★ 반복 중 음성 안내 (예: "2회")
-          ttsVM.speak("$_currentCount회");
-        } else {
-          if (_currentSet < totalSets) {
-            _startRest();
-          } else {
-            timer.cancel();
-            _isRunning = false;
-            _progress = 1.0;
-            // ★★ 운동 종료 안내
-            ttsVM.speak("운동이 끝났습니다");
-          }
-        }
+        _isRunning = false;
+        _progress = 1.0;
       });
-    });
+    }
   }
 
   void _startRest() {
@@ -114,6 +117,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _progress = 0.0;
     });
 
+    // ✅ 휴식 타이머 시작
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_isPaused) return;
 
@@ -123,10 +127,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         if (secondsLeft <= 0) {
           timer.cancel();
           _currentSet++;
-          _startExercise();
-          // ✅ 디버깅용 로그 및 TTS 출력
-          print('[TTS] 다음 세트 시작: 세트 $_currentSet');
-          ttsVM.speak('세트 $_currentSet 시작합니다.');
+          _startExercise(); // → 여기에 다시 TTS 포함됨
         } else {
           _restTimeRemaining = Duration(seconds: secondsLeft);
           _progress = 1 - (secondsLeft / totalRestSeconds);
@@ -134,6 +135,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       });
     });
   }
+
+
 
   void _togglePauseResume() {
     setState(() {
@@ -289,7 +292,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 ),
                 const SizedBox(width: 10),
                 CommonWheelPicker(
-                  values: List.generate(20, (i) => (i + 1) * 5),
+                  values: List.generate(200, (i) => (i + 1)),
                   selectedValue: settings.repeatCount,
                   onChanged: _updateRepeatCount,
                   unitLabel: '회',
