@@ -9,6 +9,7 @@ import '../widgets/reset_button.dart';
 import '../widgets/save_button.dart';
 import '../widgets/repeat_count_buttons.dart';
 import '../widgets/common_wheel_picker.dart';
+import '../widgets/stop_button.dart';
 import '../widgets/workout_circle.dart';
 import '../widgets/saved_routine_tile.dart';
 import 'settings_screen.dart';
@@ -37,6 +38,25 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   List<Routine> _routines = []; // *** 루틴 상태 변수 추가 ***
 
 
+   // *** Stop 상태: 운동은 끝났으나, 현재 세트/회차는 기억됨 ***
+
+    /// 완전 정지: 타이머 종료하고, isRunning=false 로 전환
+  void _stopWorkout() {
+    _timer?.cancel();           // 타이머만 멈추고
+    _ttsViewModel.stop();       // TTS도 멈춥니다
+    setState(() {
+      _isRunning   = false;     // 실행 중 플래그 해제
+      _isPaused    = false;     // 일시정지 해제
+      _isResting   = false;     // 휴식 상태 해제
+      _currentSet   = 1;        // 진행 세트는 1로
+      _currentCount = 1;        // 진행 카운트도 1로
+      _progress     = 0.0;      // 원형 진행도 리셋
+    });
+  }
+
+
+
+
   Future<void> _loadRoutines() async {
     final loaded = await routineVM.getRoutines();
     setState(() {
@@ -54,11 +74,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       isOn: true,
     );
 
+    _ttsViewModel.loadSettings();    // *** 설정 로드 ***
+    _ttsViewModel.initTts();         // *** 음성 속도·언어 셋업 ***
 
   }
 
 
+
   void _startTimer() {
+    print('[WorkoutScreen] ▶️ startTimer 호출 (isRunning=$_isRunning)');
     if (_isRunning) return;
 
     setState(() {
@@ -71,39 +95,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     });
 
     _startExercise();
-  }
-
-  void _startExercise() async {
-    final totalReps = viewModel.settings.repeatCount;
-    final totalSets = viewModel.settings.totalSets;
-    final totalSteps = totalReps;
-
-    _timer?.cancel();
-
-    // ✅ TTS + 화면 같이 동기화
-    await _ttsViewModel.loadSettings();
-    await _ttsViewModel.initTts();
-    await _ttsViewModel.speakCountSequence(
-      totalReps,
-      delayMillis: 1000,
-      onCount: (count) {
-        setState(() {
-          _isResting = false;
-          _currentCount = count;
-          _progress = count / totalSteps;
-        });
-      },
-    );
-
-    // ✅ TTS 끝나고 다음 세트 or 종료
-    if (_currentSet < totalSets) {
-      _startRest();
-    } else {
-      setState(() {
-        _isRunning = false;
-        _progress = 1.0;
-      });
-    }
   }
 
   void _startRest() {
@@ -135,14 +126,64 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       });
     });
   }
+  void _startExercise() {
+    final totalReps = viewModel.settings.repeatCount;
+    final totalSets = viewModel.settings.totalSets;
+
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (_isPaused) return;              // *** 일시정지 중이면 아무 것도 안 함 ***
+
+      // TTS 발화
+      await _ttsViewModel.speak('$_currentCount'); // 현재 카운트 숫자 말하기
+
+      setState(() {
+        _isResting = false;
+        // 진행도: (현재 세트-1)*총반복 + 현재 카운트 으로 계산해도 되지만
+        // 여기서는 한 세트 내에서만 보여줍니다.
+        _progress = _currentCount / totalReps;
+      });
+
+      // 다음 카운트/세트 이동
+      if (_currentCount < totalReps) {
+        _currentCount++;
+      } else {
+        timer.cancel();
+        if (_currentSet < totalSets) {
+          _startRest();
+        } else {
+          setState(() {
+            _isRunning = false;
+            _progress = 1.0;
+          });
+        }
+      }
+    });
+  }
+
+
 
 
 
   void _togglePauseResume() {
+    if (_isPaused) {
+      // ▶️ 재개: 현재 상태에서 다시 시작
+      _startExercise();                    // *** 멈췄던 타이머/음성 루틴 재개 ***
+    } else {
+      // ⏸️ 일시정지: 타이머와 TTS 모두 중지
+      _timer?.cancel();                    // *** 타이머 정지 ***
+      _ttsViewModel.stop();                // *** TTS 즉시 중지 ***
+    }
+
     setState(() {
-      _isPaused = !_isPaused;
+      _isPaused = !_isPaused;              // *** 상태 토글 ***
     });
+
+    print('[WorkoutScreen] togglePauseResume → isPaused=$_isPaused');
   }
+
+
+
 
   void _updateRepeatCount(int newValue) {
     setState(() {
@@ -304,6 +345,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ResetButton(onPressed: _resetSettings),
+                const SizedBox(width: 16),
+                StopButton(onPressed: _stopWorkout),  // *** 정지 버튼 추가 ***
                 const SizedBox(width: 16),
                 SaveButton(
                   sets: viewModel.settings.totalSets,

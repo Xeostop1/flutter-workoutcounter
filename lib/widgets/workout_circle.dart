@@ -6,7 +6,8 @@ class WorkoutCircle extends StatelessWidget {
   final int repeatCount;
   final int restSeconds;
   final double progress;
-  final void Function()? onStartPressed;
+  final VoidCallback? onStartPressed;
+  final VoidCallback? onStopPressed;
   final bool isRunning;
   final bool isPaused;
   final bool isResting;
@@ -19,6 +20,7 @@ class WorkoutCircle extends StatelessWidget {
     required this.restSeconds,
     required this.progress,
     this.onStartPressed,
+    this.onStopPressed,
     required this.isRunning,
     required this.isPaused,
     required this.isResting,
@@ -70,7 +72,10 @@ class WorkoutCircle extends StatelessWidget {
                       ? (isPaused ? Icons.play_arrow : Icons.pause)
                       : Icons.play_arrow,
                 ),
-                onPressed: onStartPressed,
+                onPressed: (){
+                  print('[WorkoutCircle] onStartPressed 호출 (isRunning=$isRunning isPaused=$isPaused)'); // ***
+                  if (onStartPressed != null) onStartPressed!(); // *** 부모 콜백 무조건 호출 ***
+                },
               ),
             ],
           ),
