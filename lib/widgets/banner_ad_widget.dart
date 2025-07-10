@@ -18,7 +18,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     super.initState();
     _bannerAd = BannerAd(
       // 테스트용 Ad Unit ID (릴리즈 시 실제 ID로 교체)
-      adUnitId: 'ca-app-pub-8767148588180199~2472701151',  // *** 테스트용 ID 사용 ***
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111',  // *** 테스트용 ID 사용 ***
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
