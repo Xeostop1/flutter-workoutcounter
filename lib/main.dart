@@ -1,13 +1,20 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+// ↓ 이 줄을 추가해주세요. (패키지 이름은 pubspec.yaml의 name 과 일치해야 합니다)
+import 'package:counter_01/firebase_options.dart';
+
 import 'screens/workout_screen.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // 반드시 맨 앞에!
-  MobileAds.instance.initialize();           // AdMob SDK 초기화
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -15,9 +22,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Workout Counter',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
       home: const WorkoutScreen(),
     );
   }

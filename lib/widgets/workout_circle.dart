@@ -114,7 +114,7 @@ class _WorkoutCircleState extends State<WorkoutCircle>
                     ),
                   )
                       : Text(
-                    '${widget.currentCount}회',
+                    '${widget.currentCount-1}회',
                     style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 20),
