@@ -11,6 +11,7 @@ import '../widgets/save_button.dart';
 import '../widgets/repeat_count_buttons.dart';
 import '../widgets/common_wheel_picker.dart';
 import '../widgets/stop_button.dart';
+import '../widgets/user_info_widget.dart';
 import '../widgets/workout_circle.dart';
 import '../widgets/saved_routine_tile.dart';
 import 'login_screen.dart';
@@ -318,6 +319,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            UserInfoWidget(),
+            SizedBox(height: 20),
             const SizedBox(height: 20),
             RepeatCountButtons(
               selectedValue: settings.repeatCount,
