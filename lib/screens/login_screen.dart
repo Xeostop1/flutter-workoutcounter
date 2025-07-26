@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton.icon(
-              icon: Image.asset('assets/google_logo.png', width: 24),
+              icon: const Icon(Icons.android),
               label: const Text('Google로 계속'),
               onPressed: _handleGoogleSignIn,
             ),

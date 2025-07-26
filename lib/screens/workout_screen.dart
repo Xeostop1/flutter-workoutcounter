@@ -13,6 +13,7 @@ import '../widgets/common_wheel_picker.dart';
 import '../widgets/stop_button.dart';
 import '../widgets/workout_circle.dart';
 import '../widgets/saved_routine_tile.dart';
+import 'login_screen.dart';
 import 'settings_screen.dart';
 
 class WorkoutScreen extends StatefulWidget {
@@ -298,6 +299,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               );
             },
           ),
+          IconButton( // *** 로그인 아이콘 버튼 추가 ***
+            icon: const Icon(Icons.login), // 로그인 아이콘
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(), // *** 로그인 화면으로 이동 ***
+                ),
+              );
+            },
+          ),
+
         ],
       ),
 
