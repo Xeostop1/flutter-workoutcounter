@@ -6,6 +6,7 @@ import '../view_models/tts_viewmodel.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../view_models/routine_viewmodel.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../widgets/counter_setup.dart';
 import '../widgets/reset_button.dart';
 import '../widgets/save_button.dart';
 import '../widgets/repeat_count_buttons.dart';
@@ -14,6 +15,7 @@ import '../widgets/stop_button.dart';
 import '../widgets/user_info_widget.dart';
 import '../widgets/workout_circle.dart';
 import '../widgets/saved_routine_tile.dart';
+import '../widgets/workout_circle_container.dart';
 import 'login_screen.dart';
 import 'settings_screen.dart';
 
@@ -188,16 +190,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
 
 
-  void _updateRepeatCount(int newValue) {
-    setState(() {
-      viewModel.updateRepeatCount(newValue);
-    });
+  void _updateRepeatCount(int? newValue) {
+    if (newValue != null) {
+      setState(() {
+        viewModel.updateRepeatCount(newValue);
+      });
+    }
   }
 
-  void _updateTotalSet(int newValue) {
-    setState(() {
-      viewModel.updateTotalSet(newValue);
-    });
+  void _updateTotalSet(int? newValue) {
+    if (newValue != null) {
+      setState(() {
+        viewModel.updateTotalSet(newValue);
+      });
+    }
   }
 
   void _resetSettings() {
@@ -319,26 +325,36 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            UserInfoWidget(),
+            // 유저정보 확인용
+            // UserInfoWidget(),
             SizedBox(height: 20),
             const SizedBox(height: 20),
-            RepeatCountButtons(
-              selectedValue: settings.repeatCount,
-              onChanged: _updateRepeatCount,
-            ),
+            // RepeatCountButtons(
+            //   selectedValue: settings.repeatCount,
+            //   onChanged: _updateRepeatCount,
+            // ),
             const SizedBox(height: 20),
-            WorkoutCircle(
-              totalSets: settings.totalSets,
-              currentSet: _currentSet,
-              repeatCount: settings.repeatCount,
-              currentCount: _currentCount,
-              restSeconds: _restTimeRemaining?.inSeconds ?? settings.breakTime.inSeconds,
-              progress: _progress,
-              onStartPressed: _isRunning ? _togglePauseResume : _startTimer,
-              isRunning: _isRunning,
-              isPaused: _isPaused,
-              isResting: _isResting,
+            //원형 그래프
+            WorkoutCircleContainer( // ***
+              totalSets: settings.totalSets, // ***
+              currentSet: _currentSet, // ***
+              repeatCount: settings.repeatCount, // ***
+              currentCount: _currentCount, // ***
+              restSeconds: _restTimeRemaining?.inSeconds ?? settings.breakTime.inSeconds, // ***
+              progress: _progress, // ***
+              onStartPressed: _isRunning ? _togglePauseResume : _startTimer, // ***
+              isRunning: _isRunning, // ***
+              isPaused: _isPaused, // ***
+              isResting: _isResting, // ***
+              setupWidget: CounterSetup( // *** 중앙에 들어갈 세팅 UI
+                selectedReps: settings.repeatCount,
+                selectedSets: settings.totalSets,
+                onRepsChanged: _updateRepeatCount,
+                onSetsChanged: _updateTotalSet,
+              ),
             ),
+
+
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
