@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
-
 class WorkoutCircle extends StatelessWidget {
   final int totalSets;
   final int currentSet;
@@ -42,10 +41,15 @@ class WorkoutCircle extends StatelessWidget {
       duration: const Duration(milliseconds: 700),
       curve: Curves.easeInOutCubic,
       builder: (context, animatedProgress, child) {
-        final angle = 2 * pi * animatedProgress - pi / 2;
         final radius = 150.0;
-        final flameX = radius + radius * cos(angle);
-        final flameY = radius + radius * sin(angle);
+
+        // *** 🔥 불꽃 위치 계산 ***
+        final angle = 2 * pi * animatedProgress - pi / 2;
+        final center = Offset(radius, radius);
+        final flameOffset = Offset(
+          center.dx + (radius - 10) * cos(angle),
+          center.dy + (radius - 10) * sin(angle),
+        );
 
         return Column(
           children: [
@@ -93,28 +97,14 @@ class WorkoutCircle extends StatelessWidget {
                     ),
                   ),
                 ),
+                // *** 🔥 불꽃 아이콘 위치 조정 ***
                 Positioned(
-                  left: flameX - 12,
-                  top: flameY - 12,
-                  child: const Text('🔥', style: TextStyle(fontSize: 24)),
+                  left: flameOffset.dx - 12,
+                  top: flameOffset.dy - 12,
+                  child: const Text('🔥', style: TextStyle(fontSize: 25)),
                 ),
               ],
             ),
-            //시작 멈춤 버튼
-            // const SizedBox(height: 20),
-            // IconButton(
-            //   icon: Icon(
-            //     isRunning
-            //         ? (isPaused ? Icons.play_arrow : Icons.pause)
-            //         : Icons.play_arrow,
-            //   ),
-            //   onPressed: onStartPressed,
-            // ),
-            // if (onStopPressed != null)
-            //   IconButton(
-            //     icon: const Icon(Icons.stop),
-            //     onPressed: onStopPressed,
-            //   ),
           ],
         );
       },

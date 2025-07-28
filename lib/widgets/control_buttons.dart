@@ -1,6 +1,3 @@
-import 'package:counter_01/widgets/play_pause_button.dart';
-import 'package:counter_01/widgets/reset_button.dart';
-import 'package:counter_01/widgets/stop_button.dart';
 import 'package:flutter/material.dart';
 
 class ControlButtons extends StatelessWidget {
@@ -21,18 +18,56 @@ class ControlButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('[ControlButtons] isRunning=$isRunning, isPaused=$isPaused');
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        ResetButton(onPressed: onReset),
-        PlayPauseButton(
-          isRunning: isRunning,
-          isPaused: isPaused,
-          onPressed: onStartPause,
+        _buildRoundButton(
+          icon: Icons.refresh,
+          backgroundColor: Colors.black12,
+          iconColor: Colors.grey,
+          onPressed: onReset,
+          size: 56,
         ),
-        StopButton(onPressed: onStop),
+        const SizedBox(width: 25), // 버튼 간 간격
+        _buildRoundButton(
+          icon: isRunning && !isPaused ? Icons.pause : Icons.play_arrow,
+          backgroundColor: Colors.redAccent,
+          iconColor: Colors.white,
+          onPressed: onStartPause,
+          size: 72,
+        ),
+        const SizedBox(width: 25), // 버튼 간 간격
+        _buildRoundButton(
+          icon: Icons.stop,
+          backgroundColor: Colors.black12,
+          iconColor: Colors.grey,
+          onPressed: onStop,
+          size: 56,
+        ),
       ],
+    );
+  }
+
+  Widget _buildRoundButton({
+    required IconData icon,
+    required Color backgroundColor,
+    required Color iconColor,
+    required VoidCallback onPressed,
+    required double size,
+  }) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: backgroundColor,
+      ),
+      child: IconButton(
+        icon: Icon(icon),
+        iconSize: size * 0.5,
+        color: iconColor,
+        onPressed: onPressed,
+      ),
     );
   }
 }
