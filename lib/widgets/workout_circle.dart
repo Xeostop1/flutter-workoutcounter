@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
-import 'counter_setup.dart';
+
 
 class WorkoutCircle extends StatelessWidget {
   final int totalSets;
@@ -100,20 +100,21 @@ class WorkoutCircle extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            IconButton(
-              icon: Icon(
-                isRunning
-                    ? (isPaused ? Icons.play_arrow : Icons.pause)
-                    : Icons.play_arrow,
-              ),
-              onPressed: onStartPressed,
-            ),
-            if (onStopPressed != null)
-              IconButton(
-                icon: const Icon(Icons.stop),
-                onPressed: onStopPressed,
-              ),
+            //시작 멈춤 버튼
+            // const SizedBox(height: 20),
+            // IconButton(
+            //   icon: Icon(
+            //     isRunning
+            //         ? (isPaused ? Icons.play_arrow : Icons.pause)
+            //         : Icons.play_arrow,
+            //   ),
+            //   onPressed: onStartPressed,
+            // ),
+            // if (onStopPressed != null)
+            //   IconButton(
+            //     icon: const Icon(Icons.stop),
+            //     onPressed: onStopPressed,
+            //   ),
           ],
         );
       },

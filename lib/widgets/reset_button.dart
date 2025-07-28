@@ -1,31 +1,21 @@
 import 'package:flutter/material.dart';
 
 class ResetButton extends StatelessWidget {
-  final VoidCallback? onPressed;
+  final VoidCallback onPressed;
 
-  ResetButton({
-    super.key,
-    this.onPressed
-  });
+  const ResetButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-          onPressed: onPressed,
-          style: OutlinedButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            side: BorderSide(color: Colors.black),
-          ),
-        child:
-        Text(
-          "Reset",
-          style: TextStyle(
-            color: Colors.black
-          ),
-        ),
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: Colors.grey.shade200,
+      child: IconButton(
+        icon: const Icon(Icons.refresh),
+        color: Colors.grey,
+        onPressed: onPressed,
+      ),
     );
   }
 }
+

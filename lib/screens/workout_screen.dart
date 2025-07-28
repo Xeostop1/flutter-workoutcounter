@@ -6,6 +6,7 @@ import '../view_models/tts_viewmodel.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../view_models/routine_viewmodel.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../widgets/control_buttons.dart';
 import '../widgets/counter_setup.dart';
 import '../widgets/reset_button.dart';
 import '../widgets/save_button.dart';
@@ -171,21 +172,28 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
 
   void _togglePauseResume() {
-    if (_isPaused) {
-      // ▶️ 재개: 현재 상태에서 다시 시작
-      _startExercise();                    // *** 멈췄던 타이머/음성 루틴 재개 ***
-    } else {
-      // ⏸️ 일시정지: 타이머와 TTS 모두 중지
-      _timer?.cancel();                    // *** 타이머 정지 ***
-      _ttsViewModel.stop();                // *** TTS 즉시 중지 ***
-    }
-
     setState(() {
-      _isPaused = !_isPaused;              // *** 상태 토글 ***
+      if (!_isRunning) {
+        // 첫 실행인 경우
+        _startExercise();
+        _isRunning = true; // ***
+        _isPaused = false; // ***
+      } else {
+        // 실행 중 → 일시정지 또는 재개
+        if (_isPaused) {
+          _startExercise(); // 재개
+        } else {
+          _timer?.cancel();
+          _ttsViewModel.stop();
+        }
+        _isPaused = !_isPaused;
+      }
     });
 
-    print('[WorkoutScreen] togglePauseResume → isPaused=$_isPaused');
+    print('[WorkoutScreen] togglePauseResume → isPaused=$_isPaused, isRunning=$_isRunning');
   }
+
+
 
 
 
@@ -347,48 +355,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               isPaused: _isPaused, // ***
               isResting: _isResting, // ***
               setupWidget: CounterSetup( // *** 중앙에 들어갈 세팅 UI
-                selectedReps: settings.repeatCount,
                 selectedSets: settings.totalSets,
+                selectedReps: settings.repeatCount,
                 onRepsChanged: _updateRepeatCount,
                 onSetsChanged: _updateTotalSet,
               ),
             ),
 
-
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CommonWheelPicker(
-                  values: List.generate(10, (i) => i + 1),
-                  selectedValue: settings.totalSets,
-                  onChanged: _updateTotalSet,
-                  unitLabel: '세트',
-                ),
-                const SizedBox(width: 10),
-                CommonWheelPicker(
-                  values: List.generate(200, (i) => (i + 1)),
-                  selectedValue: settings.repeatCount,
-                  onChanged: _updateRepeatCount,
-                  unitLabel: '회',
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ResetButton(onPressed: _resetSettings),
-                const SizedBox(width: 16),
-                StopButton(onPressed: _stopWorkout),  // *** 정지 버튼 추가 ***
-                const SizedBox(width: 16),
-                SaveButton(
-                  sets: viewModel.settings.totalSets,
-                  reps: viewModel.settings.repeatCount,
-                  onPressed: () => _saveCurrentRoutine(context), // *** 저장 버튼 연결 ***
-                ),
-
-              ],
+            //버튼 3개
+            ControlButtons(
+              isRunning: _isRunning, // 언더바 있는 실제 상태 변수 넘겨야 함
+              isPaused: _isPaused,
+              onReset: _resetSettings,
+              onStartPause: _togglePauseResume,
+              onStop: _stopWorkout,
             ),
             Expanded(
               child: _routines.isEmpty // ***

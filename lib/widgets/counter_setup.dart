@@ -18,26 +18,21 @@ class CounterSetup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Text(
-          '세트 설정',
-          style: TextStyle(fontSize: 14, color: Colors.grey),
-        ),
-        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildDropdown(
-              value: selectedReps,
-              items: List.generate(50, (i) => i + 1),
-              unit: '회',
-              onChanged: onRepsChanged,
-            ),
-            const SizedBox(width: 12),
             _buildDropdown(
               value: selectedSets,
               items: List.generate(10, (i) => i + 1),
               unit: '세트',
               onChanged: onSetsChanged,
+            ),
+            const SizedBox(width: 12),
+            _buildDropdown(
+              value: selectedReps,
+              items: List.generate(50, (i) => i + 1),
+              unit: '회',
+              onChanged: onRepsChanged,
             ),
           ],
         ),
