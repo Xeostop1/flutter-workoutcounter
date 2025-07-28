@@ -43,7 +43,7 @@ class WorkoutCircle extends StatelessWidget {
       builder: (context, animatedProgress, child) {
         final radius = 150.0;
 
-        // *** 🔥 불꽃 위치 계산 ***
+        // 🔥 불꽃 위치 계산
         final angle = 2 * pi * animatedProgress - pi / 2;
         final center = Offset(radius, radius);
         final flameOffset = Offset(
@@ -56,48 +56,62 @@ class WorkoutCircle extends StatelessWidget {
             Stack(
               alignment: Alignment.center,
               children: [
+                // 🎀 연한 분홍 배경 원 (바깥쪽)
                 SizedBox(
-                  width: radius * 2,
-                  height: radius * 2,
+                  width: (radius + 15) * 2,
+                  height: (radius + 15) * 2,
                   child: CircularPercentIndicator(
-                    radius: radius,
-                    lineWidth: 20.0,
-                    percent: animatedProgress,
+                    radius: radius + 15, // 150 → 165
+                    lineWidth: 26.0,
+                    percent: 1.0,
                     animation: false,
                     circularStrokeCap: CircularStrokeCap.round,
-                    backgroundColor: Colors.grey.shade200,
-                    progressColor: isResting ? Colors.grey : Colors.redAccent,
-                    center: isReady
-                        ? setupWidget ?? const SizedBox()
-                        : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(height: 24),
-                        Text(
-                          '세트 $currentSet / $totalSets',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        isResting
-                            ? Text(
-                          '휴식 $restSeconds초',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey.shade600,
-                          ),
-                        )
-                            : Text(
-                          '${currentCount - 1}회',
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                      ],
-                    ),
+                    backgroundColor: Colors.transparent,
+                    progressColor: const Color(0xFFFDEFF2),
+                    center: null,
                   ),
                 ),
-                // *** 🔥 불꽃 아이콘 위치 조정 ***
+
+                // 🔴 진한 빨강 진행 원 (안쪽)
+                CircularPercentIndicator(
+                  radius: radius, // 150
+                  lineWidth: 16.0, // 더 얇게
+                  percent: animatedProgress,
+                  animation: false,
+                  circularStrokeCap: CircularStrokeCap.round,
+                  backgroundColor: Colors.transparent,
+                  progressColor: isResting ? Colors.grey : Colors.redAccent,
+                  center: isReady
+                      ? setupWidget ?? const SizedBox()
+                      : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 24),
+                      Text(
+                        '세트 $currentSet / $totalSets',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      isResting
+                          ? Text(
+                        '휴식 $restSeconds초',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey.shade600,
+                        ),
+                      )
+                          : Text(
+                        '${currentCount - 1}회',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 🔥 불꽃 위치
                 Positioned(
                   left: flameOffset.dx - 12,
                   top: flameOffset.dy - 12,
@@ -105,9 +119,11 @@ class WorkoutCircle extends StatelessWidget {
                 ),
               ],
             ),
+
           ],
         );
       },
     );
   }
+
 }

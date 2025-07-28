@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/routine.dart';
 import '../screens/routine_list_screen.dart';
 import '../view_models/tts_viewmodel.dart';
@@ -215,9 +216,21 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   void _resetSettings() {
-    _timer?.cancel();
+    final viewModel = context.read<WorkoutViewModel>();
+
+    // 예: 사용자 정보에서 로그인 여부와 마지막 운동 정보 가져오기
+    bool isLoggedIn = true; // 실제 로그인 여부로 대체
+    Map<String, dynamic>? lastWorkout = {
+      'sets': 3,
+      'reps': 12,
+    }; // 실제 저장된 값으로 대체
+
+    viewModel.resetWorkout(
+      isLoggedIn: isLoggedIn,
+      lastWorkout: lastWorkout,
+    );
+
     setState(() {
-      viewModel.resetSettings();
       _isRunning = false;
       _isPaused = false;
       _isResting = false;
@@ -226,6 +239,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _currentCount = 1;
     });
   }
+
 
   Future<void> _saveCurrentRoutine(BuildContext context) async {
     final nameController = TextEditingController();
@@ -364,7 +378,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
             //버튼 3개
             ControlButtons(
-              isRunning: _isRunning, // 언더바 있는 실제 상태 변수 넘겨야 함
+              isRunning: _isRunning,
               isPaused: _isPaused,
               onReset: _resetSettings,
               onStartPause: _togglePauseResume,
