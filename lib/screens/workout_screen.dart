@@ -27,6 +27,7 @@ class WorkoutScreen extends StatefulWidget {
   @override
   State<WorkoutScreen> createState() => _WorkoutScreenState();
 }
+
 class _WorkoutScreenState extends State<WorkoutScreen> {
   final routineVM = RoutineViewModel();
   final TtsViewModel _ttsViewModel = TtsViewModel();
@@ -34,12 +35,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Duration? _restTimeRemaining;
   List<Routine> _routines = [];
 
-  WorkoutViewModel get viewModel => context.watch<WorkoutViewModel>();
+  // *** getter 제거됨 ***
 
   void _stopWorkout() {
+    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
     _timer?.cancel();
     _ttsViewModel.stop();
-    viewModel.stopWorkout(); // ViewModel에서 상태 초기화
+    viewModel.stopWorkout();
   }
 
   Future<void> _loadRoutines() async {
@@ -59,6 +61,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   void _startTimer() {
+    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
     viewModel.startTimer(
       ttsViewModel: _ttsViewModel,
       onStartRest: _startRest,
@@ -69,11 +72,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   void _startRest() {
+    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
     _timer?.cancel();
     _restTimeRemaining = viewModel.settings.breakTime;
     final totalRestSeconds = _restTimeRemaining!.inSeconds;
 
-    viewModel.startResting(); // 상태 업데이트
+    viewModel.startResting();
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (viewModel.isPaused) return;
@@ -92,6 +96,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   void _togglePauseResume() {
+    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
     if (!viewModel.isRunning) {
       _startTimer();
     } else {
@@ -107,23 +112,34 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   void _updateRepeatCount(int? newValue) {
     if (newValue != null) {
+      final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
       viewModel.updateRepeatCount(newValue);
     }
   }
 
   void _updateTotalSet(int? newValue) {
     if (newValue != null) {
+      final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
       viewModel.updateTotalSet(newValue);
     }
   }
 
   void _resetSettings() {
-    final isLoggedIn = true;
-    final lastWorkout = {'sets': 3, 'reps': 12};
-    viewModel.resetWorkout(isLoggedIn: isLoggedIn, lastWorkout: lastWorkout);
+    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false);
+
+    // 마지막 운동 값 가져오기
+    final lastSets = viewModel.lastWorkout?['sets'] ?? 2;       // 없으면 2세트
+    final lastReps = viewModel.lastWorkout?['reps'] ?? 10;      // 없으면 10회
+
+    viewModel.resetWorkout(
+      isLoggedIn: true,
+      lastWorkout: {'sets': lastSets, 'reps': lastReps},
+    );
+
     _timer?.cancel();
     _restTimeRemaining = null;
   }
+
 
   Future<void> _saveCurrentRoutine(BuildContext context) async {
     final nameController = TextEditingController();
@@ -142,6 +158,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소")),
           TextButton(
             onPressed: () async {
+              final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
               final name = nameController.text.trim();
               if (name.isNotEmpty) {
                 final routine = Routine(
@@ -169,6 +186,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<WorkoutViewModel>(); // *** UI에서는 watch로 구독
     final settings = viewModel.settings;
 
     return Scaffold(
@@ -222,11 +240,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               isRunning: viewModel.isRunning,
               isPaused: viewModel.isPaused,
               isResting: viewModel.isResting,
-              setupWidget: CounterSetup(
-                selectedSets: settings.totalSets,
-                selectedReps: settings.repeatCount,
-                onRepsChanged: _updateRepeatCount,
-                onSetsChanged: _updateTotalSet,
+              setupWidget: Consumer<WorkoutViewModel>(
+                builder: (context, viewModel, _) {
+                  final settings = viewModel.settings;
+                  return CounterSetup(
+                    selectedSets: settings.totalSets,
+                    selectedReps: settings.repeatCount,
+                    onRepsChanged: _updateRepeatCount,
+                    onSetsChanged: _updateTotalSet,
+                  );
+                },
               ),
             ),
             ControlButtons(
@@ -248,6 +271,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     sets: r.sets,
                     reps: r.reps,
                     onTap: () {
+                      final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
                       viewModel.updateTotalSet(r.sets);
                       viewModel.updateRepeatCount(r.reps);
                     },

@@ -1,17 +1,18 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tts_settings.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 
-class TtsViewModel {
+class TtsViewModel extends ChangeNotifier {
   final FlutterTts _tts = FlutterTts();
   bool _isEnabled = true;
-
 
   void setEnabled(bool on) {
     _isEnabled = on;                   // *** 외부에서 on/off 설정 가능 ***
   }
+
   // 설정 모델 사용
   TtsSettings _settings = TtsSettings(
     isEnabled: false,
@@ -61,6 +62,7 @@ class TtsViewModel {
     );
 
     await _applySettings();
+    notifyListeners();
     return _settings;
   }
 
@@ -79,6 +81,7 @@ class TtsViewModel {
     );
 
     await _applySettings();
+    notifyListeners();
   }
 
   // 설정 적용
@@ -99,54 +102,13 @@ class TtsViewModel {
 
   // *** JSON에서 숫자 단어 목록 불러오기
   Future<void> loadNumberWordsFromJson() async {
-    final String jsonString = await rootBundle.loadString(
-        'assets/number_words.json'); // *** 파일 로드
+    final String jsonString =
+    await rootBundle.loadString('assets/number_words.json'); // *** 파일 로드
     final List<dynamic> jsonList = json.decode(jsonString); // *** JSON 파싱
     numberWords = jsonList.cast<String>(); // *** String 리스트로 변환
     print('[TTS] 불러온 숫자 단어 수: ${numberWords.length}');
   }
 
-
-  // Future<void> speakCountSequence(
-  //     int repeatCount, {
-  //       int delayMillis = 1000,
-  //       void Function(int count)? onCount,
-  //     }) async {
-  //   if (!_settings.isEnabled) {
-  //     print('[TTS] 비활성화 상태로 스피킹 생략');
-  //     return;
-  //   }
-  //
-  //   print('[TTS] 세트 카운트 시작: 1~$repeatCount');
-  //
-  //   for (int i = 0; i < repeatCount; i++) {
-  //     final count = i + 1;
-  //     final word = numberWords[i];
-  //     print('[TTS] [$count] → $word');
-  //
-  //     // ✅ 콜백으로 화면 업데이트
-  //     if (onCount != null) onCount(count);
-  //
-  //     _tts.speak(word);
-  //     await Future.delayed(Duration(milliseconds: delayMillis));
-  //   }
-  //
-  //   print('[TTS] 세트 카운트 종료');
-  // }
-
-  // Future<void> speakCountSequence({
-  //   required int total,
-  //   required void Function(int count) onCount,
-  //   int delayMillis = 0,                // ← UI 전환 추가 지연(ms)
-  // }) async {
-  //   for (var i = 1; i <= total; i++) {
-  //     await _tts.speak(numberWords[i - 1]);
-  //     onCount(i);
-  //     if (delayMillis > 0) {
-  //       await Future.delayed(Duration(milliseconds: delayMillis));
-  //     }
-  //   }
-  // }
   Future<void> speakCountSequence({
     required int total,
     required void Function(int count) onCount,
@@ -154,7 +116,7 @@ class TtsViewModel {
   }) async {
     for (var i = 1; i <= total; i++) {
       if (_isEnabled) {
-        await _tts.speak(numberWords[i - 1]);  // *** isEnabled 체크 ***
+        await _tts.speak(numberWords[i - 1]); // *** isEnabled 체크 ***
       }
       onCount(i);
       if (delayMillis > 0) {
@@ -162,7 +124,4 @@ class TtsViewModel {
       }
     }
   }
-
-
-
 }
