@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 
 class ControlButtons extends StatelessWidget {
-  final bool isRunning;
-  final bool isPaused;
   final VoidCallback onReset;
-  final VoidCallback onStartPause;
+  final VoidCallback onPlayPause;
   final VoidCallback onStop;
+  final bool isRunning;
 
   const ControlButtons({
     super.key,
-    required this.isRunning,
-    required this.isPaused,
     required this.onReset,
-    required this.onStartPause,
+    required this.onPlayPause,
     required this.onStop,
+    required this.isRunning,
   });
 
   @override
@@ -21,52 +19,68 @@ class ControlButtons extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildRoundButton(
+        // Reset Button
+        _roundIconButton(
           icon: Icons.refresh,
-          backgroundColor: Colors.black12,
-          iconColor: Colors.grey,
+          color: Colors.white,
+          color:Color(0xFFFF6B35),
           onPressed: onReset,
-          size: 56,
         ),
-        const SizedBox(width: 25), // 버튼 간 간격
-        _buildRoundButton(
-          icon: isRunning && !isPaused ? Icons.pause : Icons.play_arrow,
-          backgroundColor: Colors.redAccent,
-          iconColor: Colors.white,
-          onPressed: onStartPause,
-          size: 72,
+        const SizedBox(width: 20),
+
+        // Play / Pause Button
+        GestureDetector(
+          onTap: onPlayPause,
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color:Color(0xFFFF6B35),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isRunning ? Icons.pause : Icons.play_arrow,
+              color: Colors.white,
+              size: 36,
+            ),
+          ),
         ),
-        const SizedBox(width: 25), // 버튼 간 간격
-        _buildRoundButton(
+        const SizedBox(width: 20),
+
+        // Stop Button
+        _roundIconButton(
           icon: Icons.stop,
-          backgroundColor: Colors.black12,
-          iconColor: Colors.grey,
+          color: Colors.white,
+          iconColor: Colors.orange,
           onPressed: onStop,
-          size: 56,
         ),
       ],
     );
   }
 
-  Widget _buildRoundButton({
+  Widget _roundIconButton({
     required IconData icon,
-    required Color backgroundColor,
+    required Color color,
     required Color iconColor,
     required VoidCallback onPressed,
-    required double size,
   }) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: backgroundColor,
-      ),
-      child: IconButton(
-        icon: Icon(icon),
-        iconSize: size * 0.5,
-        color: iconColor,
-        onPressed: onPressed,
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: iconColor, size: 28),
       ),
     );
   }

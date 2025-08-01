@@ -6,18 +6,8 @@ import '../screens/routine_list_screen.dart';
 import '../view_models/tts_viewmodel.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../view_models/routine_viewmodel.dart';
-import '../widgets/banner_ad_widget.dart';
 import '../widgets/control_buttons.dart';
-import '../widgets/counter_setup.dart';
-import '../widgets/reset_button.dart';
-import '../widgets/save_button.dart';
-import '../widgets/repeat_count_buttons.dart';
-import '../widgets/common_wheel_picker.dart';
-import '../widgets/stop_button.dart';
-import '../widgets/user_info_widget.dart';
 import '../widgets/workout_circle.dart';
-import '../widgets/saved_routine_tile.dart';
-import '../widgets/workout_circle_container.dart';
 import 'login_screen.dart';
 import 'settings_screen.dart';
 
@@ -32,16 +22,26 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   final routineVM = RoutineViewModel();
   final TtsViewModel _ttsViewModel = TtsViewModel();
   Timer? _timer;
+  bool _isRunning = false;
+  bool _isPaused = false;
+  bool _isResting = false;
+  int _currentSet = 1;
+  int _currentCount = 1;
+  double _progress = 0.0;
   Duration? _restTimeRemaining;
   List<Routine> _routines = [];
 
-  // *** getter 제거됨 ***
-
   void _stopWorkout() {
-    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
     _timer?.cancel();
     _ttsViewModel.stop();
-    viewModel.stopWorkout();
+    setState(() {
+      _isRunning = false;
+      _isPaused = false;
+      _isResting = false;
+      _currentSet = 1;
+      _currentCount = 1;
+      _progress = 0.0;
+    });
   }
 
   Future<void> _loadRoutines() async {
@@ -61,121 +61,100 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   void _startTimer() {
-    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
-    viewModel.startTimer(
-      ttsViewModel: _ttsViewModel,
-      onStartRest: _startRest,
-      onComplete: () {
-        _timer?.cancel();
-      },
-    );
+    if (_isRunning) return;
+    setState(() {
+      _isRunning = true;
+      _isPaused = false;
+      _isResting = false;
+      _progress = 0.0;
+      _currentSet = 1;
+      _currentCount = 1;
+    });
+    _startExercise();
   }
 
-  void _startRest() {
-    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
+  void _startRest(WorkoutViewModel viewModel) {
     _timer?.cancel();
     _restTimeRemaining = viewModel.settings.breakTime;
     final totalRestSeconds = _restTimeRemaining!.inSeconds;
-
-    viewModel.startResting();
-
+    setState(() {
+      _isResting = true;
+      _currentCount = 1;
+      _progress = 0.0;
+    });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (viewModel.isPaused) return;
+      if (_isPaused) return;
+      setState(() {
+        final secondsLeft = _restTimeRemaining!.inSeconds - 1;
+        if (secondsLeft <= 0) {
+          timer.cancel();
+          _currentSet++;
+          _startExercise();
+        } else {
+          _restTimeRemaining = Duration(seconds: secondsLeft);
+          _progress = 1 - (secondsLeft / totalRestSeconds);
+        }
+      });
+    });
+  }
 
-      final secondsLeft = _restTimeRemaining!.inSeconds - 1;
-
-      if (secondsLeft <= 0) {
-        timer.cancel();
-        viewModel.nextSet();
-        _startTimer();
+  void _startExercise() {
+    final viewModel = context.read<WorkoutViewModel>();
+    final totalReps = viewModel.settings.repeatCount;
+    final totalSets = viewModel.settings.totalSets;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (_isPaused) return;
+      await _ttsViewModel.speak('$_currentCount');
+      setState(() {
+        _isResting = false;
+        _progress = _currentCount / totalReps;
+      });
+      if (_currentCount < totalReps) {
+        _currentCount++;
       } else {
-        _restTimeRemaining = Duration(seconds: secondsLeft);
-        viewModel.updateProgress(1 - (secondsLeft / totalRestSeconds));
+        timer.cancel();
+        if (_currentSet < totalSets) {
+          _startRest(viewModel);
+        } else {
+          setState(() {
+            _isRunning = false;
+            _progress = 1.0;
+          });
+        }
       }
     });
   }
 
   void _togglePauseResume() {
-    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
-    if (!viewModel.isRunning) {
-      _startTimer();
-    } else {
-      if (viewModel.isPaused) {
-        _startTimer();
+    setState(() {
+      if (!_isRunning) {
+        _startExercise();
+        _isRunning = true;
+        _isPaused = false;
       } else {
-        _timer?.cancel();
-        _ttsViewModel.stop();
+        if (_isPaused) {
+          _startExercise();
+        } else {
+          _timer?.cancel();
+          _ttsViewModel.stop();
+        }
+        _isPaused = !_isPaused;
       }
-      viewModel.togglePause();
-    }
-  }
-
-  void _updateRepeatCount(int? newValue) {
-    if (newValue != null) {
-      final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
-      viewModel.updateRepeatCount(newValue);
-    }
-  }
-
-  void _updateTotalSet(int? newValue) {
-    if (newValue != null) {
-      final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
-      viewModel.updateTotalSet(newValue);
-    }
+    });
   }
 
   void _resetSettings() {
-    final viewModel = Provider.of<WorkoutViewModel>(context, listen: false);
-
-    // 마지막 운동 값 가져오기
-    final lastSets = viewModel.lastWorkout?['sets'] ?? 2;       // 없으면 2세트
-    final lastReps = viewModel.lastWorkout?['reps'] ?? 10;      // 없으면 10회
-
-    viewModel.resetWorkout(
-      isLoggedIn: true,
-      lastWorkout: {'sets': lastSets, 'reps': lastReps},
-    );
-
-    _timer?.cancel();
-    _restTimeRemaining = null;
-  }
-
-
-  Future<void> _saveCurrentRoutine(BuildContext context) async {
-    final nameController = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("루틴 이름 저장"),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: "루틴 이름",
-            hintText: "예: 하체 루틴",
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소")),
-          TextButton(
-            onPressed: () async {
-              final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
-              final name = nameController.text.trim();
-              if (name.isNotEmpty) {
-                final routine = Routine(
-                  name: name,
-                  sets: viewModel.settings.totalSets,
-                  reps: viewModel.settings.repeatCount,
-                );
-                await routineVM.saveRoutine(routine);
-                await _loadRoutines();
-              }
-              Navigator.pop(context);
-            },
-            child: const Text("저장"),
-          ),
-        ],
-      ),
-    );
+    final viewModel = context.read<WorkoutViewModel>();
+    viewModel.resetWorkout(isLoggedIn: true, lastWorkout: {'sets': 3, 'reps': 12});
+    setState(() {
+      _isRunning = false;
+      _isPaused = false;
+      _isResting = false;
+      _progress = 0.0;
+      _currentSet = 1;
+      _currentCount = 1;
+    });
   }
 
   @override
@@ -186,102 +165,76 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<WorkoutViewModel>(); // *** UI에서는 watch로 구독
+    final viewModel = context.watch<WorkoutViewModel>();
     final settings = viewModel.settings;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFFFFCF8),
       appBar: AppBar(
-        title: const Text('Workout Counter'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "운동",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.list_alt),
+            icon: const Icon(Icons.tune, color: Colors.black),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const RoutineListScreen()),
-              ).then((needRefresh) {
-                if (needRefresh == true) _loadRoutines();
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.login),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
             },
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
-            WorkoutCircleContainer(
-              totalSets: settings.totalSets,
-              currentSet: viewModel.currentSet,
-              repeatCount: settings.repeatCount,
-              currentCount: viewModel.currentCount,
-              restSeconds: _restTimeRemaining?.inSeconds ?? settings.breakTime.inSeconds,
-              progress: viewModel.progress,
-              onStartPressed: viewModel.isRunning ? _togglePauseResume : _startTimer,
-              isRunning: viewModel.isRunning,
-              isPaused: viewModel.isPaused,
-              isResting: viewModel.isResting,
-              setupWidget: Consumer<WorkoutViewModel>(
-                builder: (context, viewModel, _) {
-                  final settings = viewModel.settings;
-                  return CounterSetup(
-                    selectedSets: settings.totalSets,
-                    selectedReps: settings.repeatCount,
-                    onRepsChanged: _updateRepeatCount,
-                    onSetsChanged: _updateTotalSet,
-                  );
-                },
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          const SizedBox(height: 60),
+          // 운동명 버튼
+          Container(
+            width: 200,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.05),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                "스쿼트",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
               ),
             ),
-            ControlButtons(
-              isRunning: viewModel.isRunning,
-              isPaused: viewModel.isPaused,
-              onReset: _resetSettings,
-              onStartPause: _togglePauseResume,
-              onStop: _stopWorkout,
-            ),
-            Expanded(
-              child: _routines.isEmpty
-                  ? const Center(child: Text('저장된 루틴이 없습니다.'))
-                  : ListView.builder(
-                itemCount: _routines.length,
-                itemBuilder: (context, index) {
-                  final r = _routines[index];
-                  return SavedRoutineTile(
-                    title: r.name,
-                    sets: r.sets,
-                    reps: r.reps,
-                    onTap: () {
-                      final viewModel = Provider.of<WorkoutViewModel>(context, listen: false); // ***
-                      viewModel.updateTotalSet(r.sets);
-                      viewModel.updateRepeatCount(r.reps);
-                    },
-                  );
-                },
-              ),
-            ),
-            const BannerAdWidget(),
-          ],
-        ),
+          ),
+          const SizedBox(height: 50),
+          // 수정된 WorkoutCircle
+          WorkoutCircle(
+            currentSet: _currentSet,
+            totalSets: settings.totalSets,
+            currentCount: _currentCount,
+            totalCount: settings.repeatCount,
+            progress: _progress,
+          ),
+          const SizedBox(height: 50),
+          ControlButtons(
+            onReset: _resetSettings,
+            onPlayPause: _isRunning ? _togglePauseResume : _startTimer,
+            onStop: _stopWorkout,
+            isRunning: _isRunning,
+          ),
+        ],
       ),
     );
   }
