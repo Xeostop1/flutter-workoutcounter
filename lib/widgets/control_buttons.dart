@@ -23,7 +23,7 @@ class ControlButtons extends StatelessWidget {
         _roundIconButton(
           icon: Icons.refresh,
           color: Colors.white,
-          color:Color(0xFFFF6B35),
+          iconColor: Colors.orange,
           onPressed: onReset,
         ),
         const SizedBox(width: 20),

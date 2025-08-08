@@ -5,6 +5,7 @@ import 'package:counter_01/screens/workout_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +18,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'Workout Counter',
       debugShowCheckedModeBanner: false, // 디버그 배너 제거
@@ -29,7 +29,6 @@ class MyApp extends StatelessWidget {
       routes: {
         '/workout': (context) => const WorkoutScreen(), // 네비게이션 이동용
       },
-
     );
   }
 }

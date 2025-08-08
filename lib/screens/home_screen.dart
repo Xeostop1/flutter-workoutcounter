@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        centerTitle: true,
+        centerTitle: false,
         title: Image.asset(
           'assets/images/logo.png', // 로고 이미지
           height: 28,
@@ -37,25 +37,30 @@ class HomeScreen extends StatelessWidget {
                     'assets/images/firedefalut.png', // 마스코트 이미지
                     height: 64,
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFFD599), Color(0xFFFFE6B3)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                  const SizedBox(width: 8),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/card_messege.png', // 말풍선 배경 이미지
+                        height: 64, // 말풍선 높이 맞게 조절
+                        width:
+                            MediaQuery.of(context).size.width *
+                            0.6, // 화면의 60% 너비
+                        fit: BoxFit.contain,
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      '오늘부터 시작이야!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                      const Padding(
+                        padding: EdgeInsets.only(right: 16), // 텍스트 위치 조절
+                        child: Text(
+                          '오늘부터 시작이야!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -93,15 +98,14 @@ class HomeScreen extends StatelessWidget {
                       Text(
                         '루틴이 비어있어요!',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(height: 4),
                       Text(
                         '루틴을 추가해주세요 +',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.black54),
                       ),
                     ],
                   ),
@@ -129,18 +133,9 @@ class HomeScreen extends StatelessWidget {
                 icon: Icon(Icons.fitness_center),
                 label: '운동',
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.bar_chart),
-                label: '기록',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.list),
-                label: '루틴',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: '설정',
-              ),
+              BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '기록'),
+              BottomNavigationBarItem(icon: Icon(Icons.list), label: '루틴'),
+              BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
             ],
             onTap: (index) {
               // TODO: 네비게이션 기능 추가
