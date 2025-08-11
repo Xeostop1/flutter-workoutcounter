@@ -146,7 +146,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   void _resetSettings() {
     final viewModel = context.read<WorkoutViewModel>();
-    viewModel.resetWorkout(isLoggedIn: true, lastWorkout: {'sets': 3, 'reps': 12});
+    viewModel.resetWorkout(
+      isLoggedIn: true,
+      lastWorkout: {'sets': 3, 'reps': 12},
+    );
     setState(() {
       _isRunning = false;
       _isPaused = false;
@@ -171,7 +174,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFCF8),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFFFFFCF8),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
@@ -186,7 +189,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           IconButton(
             icon: const Icon(Icons.tune, color: Colors.black),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
             },
           ),
         ],
@@ -214,7 +220,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             child: const Center(
               child: Text(
                 "스쿼트",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
             ),
           ),

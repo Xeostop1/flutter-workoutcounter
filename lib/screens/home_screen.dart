@@ -1,176 +1,223 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 루틴 예시 데이터
-    final routines = [
-      {'name': '스쿼트', 'sets': 3, 'reps': 10},
-      {'name': '데드리프트', 'sets': 3, 'reps': 10},
-      {'name': '덩키킥', 'sets': 3, 'reps': 10},
+    // 예시 루틴 데이터 (필요시 ViewModel로 교체)
+    final routines = const [
+      {'name': '등'},
+      {'name': '하체'},
+      {'name': '상체'},
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFF3EA), // 배경 톤 (이미지 느낌에 맞춤)
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         centerTitle: false,
-        title: Image.asset(
-          'assets/images/logo.png', // 로고 이미지
-          height: 28,
-        ),
+        title: Image.asset('assets/images/logo.png', height: 28),
       ),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // 마스코트 + 말풍선
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+            // 본문
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.asset(
-                    'assets/images/firedefalut.png', // 마스코트 이미지
-                    height: 64,
+                  // ====== (기존) 마스코트 + 말풍선 ======
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 20,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/firedefalut.png',
+                          height: 64,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Image.asset(
+                                'assets/images/card_messege.png',
+                                height: 64,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(right: 16),
+                                child: Text(
+                                  '오늘도 할 수 있다!',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Stack(
-                    alignment: Alignment.center,
+
+                  const SizedBox(height: 28),
+
+                  // ====== 저장된 루틴 타이틀 ======
+                  Row(
                     children: [
                       Image.asset(
-                        'assets/images/card_messege.png', // 말풍선 배경 이미지
-                        height: 64, // 말풍선 높이 맞게 조절
-                        width:
-                            MediaQuery.of(context).size.width *
-                            0.6, // 화면의 60% 너비
-                        fit: BoxFit.contain,
+                        'assets/images/firedefalut.png',
+                        width: 26,
+                        height: 26,
                       ),
-                      const Padding(
-                        padding: EdgeInsets.only(right: 16), // 텍스트 위치 조절
-                        child: Text(
-                          '오늘부터 시작이야!',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        '저장된 루틴',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ====== 루틴 카드 리스트 ======
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      children: List.generate(routines.length, (i) {
+                        final name = routines[i]['name'] as String;
+                        return Column(
+                          children: [
+                            _RoutineRow(title: name),
+                            if (i != routines.length - 1)
+                              const Divider(
+                                height: 16,
+                                thickness: 1,
+                                color: Color(0xFFEDEDED),
+                                indent: 24,
+                                endIndent: 24,
+                              ),
+                          ],
+                        );
+                      }),
+                    ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            // 루틴 목록
-            if (routines.isNotEmpty)
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: routines.length,
-                  itemBuilder: (context, index) {
-                    final r = routines[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        '${r['name']}   ${r['sets']}세트 ${r['reps']}회',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+            // ====== 오른쪽 하단 PLAY 버튼 (GoRouter로 이동) ======
+            Positioned(
+              right: 20,
+              bottom: 24,
+              child: GestureDetector(
+                onTap: () => context.go('/workout'),
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.deepOrange.withOpacity(0.18),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
                       ),
-                    );
-                  },
-                ),
-              )
-            else
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    ],
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: const [
-                      Text(
-                        '루틴이 비어있어요!',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Color(0xFFFF6A2A),
+                        child: Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 32,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        '루틴을 추가해주세요 +',
-                        style: TextStyle(fontSize: 14, color: Colors.black54),
+                      Positioned(
+                        bottom: 10,
+                        child: Text(
+                          'PLAY',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-
-            const SizedBox(height: 80), // 네비게이션바 공간 확보
+            ),
           ],
         ),
       ),
+    );
+  }
+}
 
-      // 하단 네비게이션바 + 중앙 PLAY 버튼
-      bottomNavigationBar: Stack(
-        alignment: Alignment.bottomCenter,
+// 체크박스 모양 + 제목 한 줄
+class _RoutineRow extends StatelessWidget {
+  final String title;
+  const _RoutineRow({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      child: Row(
         children: [
-          // 네비게이션바
-          BottomNavigationBar(
-            currentIndex: 0,
-            selectedItemColor: Colors.deepOrange,
-            unselectedItemColor: Colors.grey,
-            showUnselectedLabels: true,
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.fitness_center),
-                label: '운동',
-              ),
-              BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '기록'),
-              BottomNavigationBarItem(icon: Icon(Icons.list), label: '루틴'),
-              BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
-            ],
-            onTap: (index) {
-              // TODO: 네비게이션 기능 추가
-            },
-          ),
-
-          // 중앙 Play 버튼
-          Positioned(
-            bottom: 20,
-            child: GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/workout');
-              },
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: Colors.deepOrange,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: 36,
-                ),
-              ),
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFD7D7D7), width: 2),
+              borderRadius: BorderRadius.circular(4),
+              color: Colors.white,
             ),
           ),
+          const SizedBox(width: 14),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+          ),
+          const Spacer(),
         ],
       ),
     );

@@ -1,14 +1,19 @@
 // lib/main.dart
 
-import 'package:counter_01/screens/home_screen.dart';
-import 'package:counter_01/screens/workout_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'package:counter_01/router/app_router.dart';
+
+// ▼ ViewModel 전역 주입 (프로젝트 경로에 맞게 조정)
+import 'package:counter_01/view_models/workout_viewmodel.dart';
+import 'package:counter_01/view_models/tts_viewmodel.dart';
+import 'package:counter_01/view_models/routine_viewmodel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // firebase_options.dart를 쓰고 있다면 옵션과 함께 초기화하는 게 안전합니다.
   await Firebase.initializeApp();
   runApp(const MyApp());
 }
@@ -18,17 +23,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Workout Counter',
-      debugShowCheckedModeBanner: false, // 디버그 배너 제거
-      theme: ThemeData(
-        primarySwatch: Colors.deepOrange,
-        scaffoldBackgroundColor: Colors.white,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => WorkoutViewModel()),
+        ChangeNotifierProvider(create: (_) => TtsViewModel()),
+        ChangeNotifierProvider(create: (_) => RoutineViewModel()),
+      ],
+      child: MaterialApp.router(
+        title: 'Workout Counter',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.deepOrange,
+          scaffoldBackgroundColor: Colors.white,
+        ),
+        routerConfig: router, // GoRouter 라우팅 유지
       ),
-      home: const HomeScreen(), // 앱 첫 화면을 HomeScreen으로 설정
-      routes: {
-        '/workout': (context) => const WorkoutScreen(), // 네비게이션 이동용
-      },
     );
   }
 }
