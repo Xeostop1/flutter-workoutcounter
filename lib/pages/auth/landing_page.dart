@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../widgets/social_button.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -9,75 +13,66 @@ class LandingPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(),
-              Text(
-                "마음 속 작은 불씨를 살려\n건강한 운동습관 만들기",
-                style: Theme.of(
-                  context,
-                ).textTheme.headlineSmall?.copyWith(color: Colors.white),
+        child: Stack(
+          children: [
+            // ✔︎ 배경 이미지는 네가 준 sns_login.png를 그대로 사용
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/sns_login.png',
+                fit: BoxFit.cover,
               ),
-              const SizedBox(height: 24),
-              const Center(child: Text('🔥', style: TextStyle(fontSize: 96))),
-              const Spacer(),
-              _LoginBtn(
-                label: 'Apple 로그인',
-                onTap: () {
-                  /* TODO: 애플 로그인 */
-                },
-              ),
-              const SizedBox(height: 12),
-              _LoginBtn(
-                label: 'Google 로그인',
-                onTap: () {
-                  /* TODO: 구글 로그인 */
-                },
-                light: true,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => context.go('/onboarding/intro'),
-                  child: const Text('로그인 없이 시작하기'),
+            ),
+
+            // 하단 버튼/스킵 오버레이
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SocialButton.apple(
+                      label: 'Apple 로그인',
+                      onPressed: () {
+                        // TODO: signInWithApple() 연결
+                      },
+                      // iconAsset: 'assets/icons/apple.png',
+                    ),
+                    const SizedBox(height: 12),
+                    SocialButton.google(
+                      label: 'Google 로그인',
+                      onPressed: () {
+                        // TODO: signInWithGoogle() 연결
+                      },
+                      // iconAsset: 'assets/icons/google.png',
+                    ),
+                    const SizedBox(height: 8),
+                    // ✅ 맨 아래 Skip: 디바이스 온보딩 스킵 저장 후 홈으로
+                    TextButton(
+                      onPressed: () async {
+                        await context.read<AuthViewModel>().skipOnboarding();
+                        if (context.mounted) context.go('/home');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        '건너뛰기',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-class _LoginBtn extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  final bool light;
-  const _LoginBtn({
-    required this.label,
-    required this.onTap,
-    this.light = false,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: light ? Colors.white : Colors.black,
-          foregroundColor: light ? Colors.black : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(label),
       ),
     );
   }
