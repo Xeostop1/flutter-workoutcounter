@@ -2,13 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/routine.dart';
-import '../screens/routine_list_screen.dart';
 import '../view_models/tts_viewmodel.dart';
 import '../view_models/workout_viewmodel.dart';
 import '../view_models/routine_viewmodel.dart';
 import '../widgets/control_buttons.dart';
 import '../widgets/workout_circle.dart';
-import 'login_screen.dart';
 import 'settings_screen.dart';
 
 class WorkoutScreen extends StatefulWidget {

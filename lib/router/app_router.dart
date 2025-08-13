@@ -5,7 +5,7 @@ import '../screens/home_screen.dart';
 import '../screens/record_screen.dart';
 import '../screens/routine_screen.dart';
 import '../screens/settings_screen.dart';
-import '../screens/workout_screen.dart'; // ✅ 추가: 운동 진행 화면
+import '../screens/workout_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -27,7 +27,6 @@ final GoRouter router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
   routes: [
-    // ✅ 운동 진행 화면: 탭바 없이 전체화면으로 띄우기 위해 루트 네비게이터에 등록
     GoRoute(
       path: '/workout',
       parentNavigatorKey: _rootNavigatorKey, // ← 탭바 숨김
