@@ -1,21 +1,25 @@
+// lib/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-// 온보딩/스킵 상태
+// ViewModels
 import 'viewmodels/auth_viewmodel.dart';
+import 'viewmodels/counter_viewmodel.dart';
 
-// 기존 탭 페이지
+// Services
+import 'services/tts_service.dart';
+
+// Pages
 import 'pages/home/home_page.dart';
 import 'pages/record/record_page.dart';
 import 'pages/routine/routine_page.dart';
 import 'pages/settings/settings_page.dart';
-
-// 추가: 스플래시/랜딩/온보딩
 import 'pages/splash/splash_page.dart';
 import 'pages/auth/landing_page.dart';
 import 'pages/onboarding/onboarding_intro_page.dart';
 import 'pages/onboarding/onboarding_goal_page.dart';
+import 'pages/counter/counter_page.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.child});
@@ -28,7 +32,6 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int idx = 0;
 
-  // 현재 경로에 따라 탭 인덱스 동기화
   int _indexFromLocation(String loc) {
     if (loc.startsWith('/record')) return 1;
     if (loc.startsWith('/routine')) return 2;
@@ -77,14 +80,15 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-// ✨ BuildContext를 받도록 변경 (redirect에서 Provider 상태를 씀)
+/// ✅ 반드시 이 **함수 이름과 시그니처**로 유지하세요.
 GoRouter buildRouter(BuildContext context) {
-  final auth = context.read<AuthViewModel>(); // refreshListenable로도 감지됨
+  final auth = context.read<AuthViewModel>();
 
   return GoRouter(
     initialLocation: '/splash',
-    refreshListenable: auth, // AuthViewModel 변경 시 redirect 재평가
+    refreshListenable: auth,
     routes: [
+      // 스플래시/랜딩/온보딩
       GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
       GoRoute(path: '/landing', builder: (_, __) => const LandingPage()),
       GoRoute(
@@ -95,6 +99,20 @@ GoRouter buildRouter(BuildContext context) {
         path: '/onboarding/goal',
         builder: (_, __) => const OnboardingGoalPage(),
       ),
+
+      // 카운터: 탭바 없이 전체 화면 → ShellRoute 바깥
+      GoRoute(
+        path: '/counter',
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => CounterViewModel(
+            tts: TtsService(),
+            // 기본값: 3세트 15회, 휴식 10초
+          ),
+          child: const CounterPage(),
+        ),
+      ),
+
+      // 탭 쉘
       ShellRoute(
         builder: (_, __, child) => AppShell(child: child),
         routes: [
@@ -109,12 +127,10 @@ GoRouter buildRouter(BuildContext context) {
       final a = ctx.read<AuthViewModel>();
       final loc = state.matchedLocation;
 
-      // 스플래시에서 분기: 디바이스에서 온보딩을 스킵했으면 홈, 아니면 랜딩
       if (loc == '/splash') {
         return a.onboardingSkippedDevice ? '/home' : '/landing';
       }
 
-      // 온보딩 미스킵 상태에서는 온보딩/랜딩만 허용
       const allow = [
         '/landing',
         '/onboarding/intro',
@@ -125,7 +141,6 @@ GoRouter buildRouter(BuildContext context) {
         return '/landing';
       }
 
-      // 온보딩 스킵 이미 한 사용자가 온보딩 경로 접근 시 홈으로
       if (a.onboardingSkippedDevice && loc.startsWith('/onboarding')) {
         return '/home';
       }

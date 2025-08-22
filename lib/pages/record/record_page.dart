@@ -4,9 +4,6 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../viewmodels/record_viewmodel.dart';
 import '../../widgets/record_empty_cta.dart';
 import '../counter/counter_page.dart';
-import '../../viewmodels/counter_viewmodel.dart';
-import '../../services/tts_service.dart';
-import '../../viewmodels/settings_viewmodel.dart';
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -21,7 +18,6 @@ class _RecordPageState extends State<RecordPage> {
   @override
   Widget build(BuildContext context) {
     final rec = context.watch<RecordViewModel>();
-    final settings = context.read<SettingsViewModel>();
 
     final list = rec.byDate(_selected);
 
@@ -76,18 +72,11 @@ class _RecordPageState extends State<RecordPage> {
                     padding: const EdgeInsets.all(16),
                     child: RecordEmptyCTA(
                       onTap: () {
+                        // ✅ 카운터 화면으로 바로 이동 (CounterPage가 내부에서 VM/TTS를 세팅)
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => ChangeNotifierProvider(
-                              create: (_) => CounterViewModel(
-                                tts: TtsService()
-                                  ..init(voice: settings.voiceId),
-                                settings: settings,
-                                records: rec,
-                              ),
-                              child: const CounterPage(),
-                            ),
+                            builder: (_) => const CounterPage(),
                           ),
                         );
                       },

@@ -1,109 +1,94 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class CircularCounter extends StatelessWidget {
-  final double progress; // 0~1
-  final bool resting; // 휴식 중 색 변경
+  /// 0.0 ~ 1.0 (세트 내 누적 진행도)
+  final double progress;
+
+  /// 휴식 중이면 색상 스킴 변경
+  final bool resting;
+  final double size;
+
   const CircularCounter({
     super.key,
     required this.progress,
     required this.resting,
+    this.size = 220,
   });
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context).colorScheme;
-    final activeGradient = const SweepGradient(
-      startAngle: -1.57,
-      endAngle: 4.71,
-      colors: [
-        Color(0xFFFFE0CC), // 연한 deeporange
-        Color(0xFFFFA366),
-        Color(0xFFFF7A3D),
-        Color(0xFFE65400), // 진해지는 deeporange
-      ],
-      stops: [0.0, 0.45, 0.75, 1.0],
-    );
-    final restColor = Colors.greenAccent.shade100;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: progress.clamp(0.0, 1.0)),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, _) {
-        return CustomPaint(
-          size: const Size.square(220),
-          painter: _RingPainter(
-            value,
-            resting ? restColor : null,
-            activeGradient,
-          ),
-          child: Center(
-            child: DefaultTextStyle(
-              style: Theme.of(context).textTheme.displaySmall!,
-              child: const SizedBox.shrink(),
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _RingPainter(progress: progress, resting: resting),
+        child: Center(
+          child: Container(
+            width: size * 0.78,
+            height: size * 0.78,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
 class _RingPainter extends CustomPainter {
-  final double progress;
-  final Color? restColor;
-  final Gradient gradient;
-  _RingPainter(this.progress, this.restColor, this.gradient);
+  final double progress; // 0~1
+  final bool resting;
+
+  _RingPainter({required this.progress, required this.resting});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    const stroke = 24.0;
+    final thickness = size.width * 0.10;
+    final center = size.center(Offset.zero);
+    final radius = size.width / 2 - thickness / 2;
 
-    final bg = Paint()
-      ..color = const Color(0x22FF7A3D)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
+    // 고정 시작각: 12시 방향
+    const start = -math.pi / 2;
 
-    final fg = Paint()
+    // 1) 배경 트랙(항상 보임) — 다크 배경에서도 또렷하게
+    final track = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
+      ..strokeWidth = thickness
       ..strokeCap = StrokeCap.round
-      ..shader = restColor != null ? null : gradient.createShader(rect);
-
-    if (restColor != null) fg.color = restColor!;
-
-    // 배경 원
+      ..color = Colors.white.withOpacity(0.10);
     canvas.drawArc(
-      Rect.fromLTWH(
-        stroke / 2,
-        stroke / 2,
-        size.width - stroke,
-        size.height - stroke,
-      ),
-      -1.57,
-      6.283,
+      Rect.fromCircle(center: center, radius: radius),
+      start,
+      2 * math.pi - 0.001,
       false,
-      bg,
+      track,
     );
 
-    // 진행 원
-    canvas.drawArc(
-      Rect.fromLTWH(
-        stroke / 2,
-        stroke / 2,
-        size.width - stroke,
-        size.height - stroke,
-      ),
-      -1.57,
-      6.283 * progress,
-      false,
-      fg,
-    );
+    // 2) 진행 웨지(누적) — 휴식/운동 색상 구분
+    final p = progress.clamp(0.0, 1.0);
+    if (p > 0) {
+      final active = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = thickness
+        ..strokeCap = StrokeCap.round
+        ..color = resting
+            ? const Color(0xFF5CCB85)
+            : Colors.deepOrange.shade400;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        start,
+        2 * math.pi * p,
+        false,
+        active,
+      );
+    }
   }
 
   @override
   bool shouldRepaint(covariant _RingPainter old) =>
-      old.progress != progress || old.restColor != restColor;
+      old.progress != progress || old.resting != resting;
 }
