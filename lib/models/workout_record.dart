@@ -25,11 +25,11 @@ class WorkoutRecord {
   };
 
   factory WorkoutRecord.fromJson(Map<String, dynamic> j) => WorkoutRecord(
-    id: j['id'],
-    routineId: j['routineId'],
-    routineName: j['routineName'],
-    date: DateTime.parse(j['date']),
-    doneSets: j['doneSets'],
-    doneRepsTotal: j['doneRepsTotal'],
+    id: j['id'] as String,
+    routineId: j['routineId'] as String,
+    routineName: j['routineName'] as String,
+    date: DateTime.parse(j['date'] as String),
+    doneSets: j['doneSets'] as int,
+    doneRepsTotal: j['doneRepsTotal'] as int,
   );
 }

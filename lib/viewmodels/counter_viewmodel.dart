@@ -4,7 +4,8 @@ import '../services/tts_service.dart';
 enum CounterPhase { rep, rest, done }
 
 class CounterViewModel extends ChangeNotifier {
-  // 기본값: 3세트 15회, 1회 2초, 휴식 10초
+  // ▶ 추가: routineId
+  String routineId;
   String routineName;
   int totalSets;
   int repsPerSet;
@@ -16,9 +17,10 @@ class CounterViewModel extends ChangeNotifier {
 
   CounterViewModel({
     required this.tts,
+    this.routineId = 'default', // 기본 id
     this.routineName = '스쿼트',
-    this.totalSets = 3,
-    this.repsPerSet = 15,
+    this.totalSets = 1,
+    this.repsPerSet = 2,
     this.restSeconds = 10,
     this.secondsPerRep = 2.0,
     this.verbosity = TtsVerbosity.normal,
@@ -51,20 +53,22 @@ class CounterViewModel extends ChangeNotifier {
     await tts.speak(text);
   }
 
-  /// 루틴을 선택했을 때 값 교체 + 초기화
+  /// 루틴 선택 시 값 적용
   Future<void> applyRoutine({
     required String name,
     required int sets,
     required int reps,
     double? secPerRep,
     int? restSec,
+    String? routineId, // ▶ 추가: 외부에서 넘겨오면 우선 사용
   }) async {
     routineName = name;
     totalSets = sets;
     repsPerSet = reps;
     if (secPerRep != null) secondsPerRep = secPerRep;
     if (restSec != null) restSeconds = restSec;
-    // 상태 초기화
+    this.routineId = routineId ?? _slugFromName(name);
+
     isPlaying = false;
     isPaused = false;
     isRest = false;
@@ -73,6 +77,12 @@ class CounterViewModel extends ChangeNotifier {
     notifyListeners();
     await _speak('$name, ${sets}세트 ${reps}회로 시작합니다');
   }
+
+  String _slugFromName(String s) => s
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
 
   Future<void> play() async {
     if (phase == CounterPhase.done) return;
@@ -95,7 +105,7 @@ class CounterViewModel extends ChangeNotifier {
     isPlaying = false;
     isPaused = false;
     isRest = false;
-    currentSet = totalSets + 1; // done
+    currentSet = totalSets + 1;
     notifyListeners();
     await _speak("정지했어요.");
   }
@@ -118,7 +128,6 @@ class CounterViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 애니메이션 1라운드 완료 시 호출
   Future<CounterPhase> onTickComplete() async {
     if (phase == CounterPhase.rest) {
       isRest = false;
@@ -147,8 +156,7 @@ class CounterViewModel extends ChangeNotifier {
         await _speak("$currentRep");
       }
       if (isHalfway(currentRep, repsPerSet)) {
-        // await _speak("절반 지났어요!");
-        // -> 이걸 정말 쓸건지 확인하기!!!
+        await _speak("절반 지났어요!");
       }
 
       if (currentRep >= repsPerSet) {

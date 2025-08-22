@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../viewmodels/counter_viewmodel.dart';
+import '../../viewmodels/record_viewmodel.dart';
+import '../../viewmodels/auth_viewmodel.dart';
+
+import '../../models/routine_preset.dart';
 import '../../widgets/circular_counter.dart';
+import '../../widgets/circle_button.dart';
+import '../../widgets/next_routine_chip.dart';
 
 class CounterPage extends StatefulWidget {
   const CounterPage({super.key});
@@ -14,27 +21,68 @@ class _CounterPageState extends State<CounterPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
-  // 예시 저장 루틴 (실제 앱에서는 ViewModel/Repository에서 읽어와 교체)
-  final List<_RoutineConfig> _saved = [
-    const _RoutineConfig(name: '스쿼트', sets: 3, reps: 15),
-    const _RoutineConfig(name: '데드리프트', sets: 3, reps: 10),
-    const _RoutineConfig(name: '스플릿 스쿼트', sets: 4, reps: 20),
+  // 디버그 출력(짧은 한글)
+  void _d(String m) => debugPrint('$m');
+
+  // 하단 디버그 바 표시 여부
+  final bool _showDebugBar = true;
+  String _lastDoneLog = '';
+
+  // 예시 프리셋 (서비스에선 VM/Repo 사용)
+  final List<RoutinePreset> _presets = [
+    RoutinePreset(id: 'warmup', name: '웜업', sets: 1, reps: 2),
+    RoutinePreset(id: 'squat', name: '스쿼트', sets: 3, reps: 25),
+    RoutinePreset(id: 'lunge', name: '런지', sets: 3, reps: 20),
   ];
-  int _selected = 0;
+  int _selected = 0; // 웜업 먼저 선택
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
 
+    // 라운드(반복/휴식) 한 번 끝날 때마다 호출
     _controller.addStatusListener((status) async {
-      if (status == AnimationStatus.completed) {
+      if (status == AnimationStatus.completed && mounted) {
         final vm = context.read<CounterViewModel>();
-        final next = await vm.onTickComplete();
-        if (next != CounterPhase.done && vm.isPlaying && !vm.isPaused) {
+        final phase = await vm.onTickComplete();
+
+        if (phase == CounterPhase.done) {
+          final auth = context.read<AuthViewModel>();
+          _d('완료 저장시도 로그인?=${auth.isLoggedIn} id=${vm.routineId}');
+          if (auth.isLoggedIn) {
+            await context.read<RecordViewModel>().saveWorkout(
+              dateTime: DateTime.now(),
+              routineId: vm.routineId,
+              routineName: vm.routineName,
+              sets: vm.totalSets,
+              repsPerSet: vm.repsPerSet,
+            );
+            _d('저장완료 id=${vm.routineId}');
+            if (!mounted) return;
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('기록이 저장되었어요!')));
+          }
+        } else if (vm.isPlaying && !vm.isPaused) {
           _startRound();
         }
       }
+    });
+
+    // 첫 진입 시 현재 선택 프리셋을 VM에 적용(아이디 일치 보장)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final vm = context.read<CounterViewModel>();
+      final p = _presets[_selected];
+      await vm.applyRoutine(
+        name: p.name,
+        sets: p.sets,
+        reps: p.reps,
+        secPerRep: p.secPerRep,
+        restSec: p.restSec,
+        routineId: p.id,
+      );
+      _d('프리셋적용 id=${p.id} 이름=${p.name} ${p.sets}/${p.reps}');
     });
   }
 
@@ -57,7 +105,31 @@ class _CounterPageState extends State<CounterPage>
   @override
   Widget build(BuildContext context) {
     const bg = Color(0xFF111111);
+
     final vm = context.watch<CounterViewModel>();
+    final auth = context.watch<AuthViewModel>();
+    final rec = context.watch<RecordViewModel>();
+
+    // 오늘 완료한 routineId 집합
+    final DateTime today = DateTime.now();
+    final Set<String> doneTodayIds = auth.isLoggedIn
+        ? rec.all
+              .where(
+                (r) =>
+                    r.date.year == today.year &&
+                    r.date.month == today.month &&
+                    r.date.day == today.day,
+              )
+              .map((r) => r.routineId)
+              .toSet()
+        : <String>{};
+
+    // 한 줄 로그(집합 변경시에만)
+    final doneStr = '{${doneTodayIds.join(",")}}';
+    if (doneStr != _lastDoneLog) {
+      _lastDoneLog = doneStr;
+      _d('오늘완료 $doneStr');
+    }
 
     // 재생 상태가 되면 라운드 시작
     if (vm.isPlaying &&
@@ -122,7 +194,7 @@ class _CounterPageState extends State<CounterPage>
 
             const SizedBox(height: 18),
 
-            // 원형 카운터 + 중앙 텍스트 (가독성: 검정 텍스트)
+            // 원형 카운터 + 중앙 텍스트 (누적 채움)
             SizedBox(
               height: 250,
               child: Stack(
@@ -133,11 +205,9 @@ class _CounterPageState extends State<CounterPage>
                     builder: (_, __) {
                       double progress;
                       if (vm.isRest) {
-                        // 휴식은 0→1로 별도 진행
-                        progress = _controller.value;
+                        progress = _controller.value; // 휴식 0→1
                       } else {
                         final total = vm.repsPerSet <= 0 ? 1 : vm.repsPerSet;
-                        // ✅ 누적: (완료한 개수 + 현재 1회의 진행도) / 총 횟수
                         progress = (vm.currentRep + _controller.value) / total;
                       }
                       return CircularCounter(
@@ -207,7 +277,7 @@ class _CounterPageState extends State<CounterPage>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _CircleButton(
+                  CircleButton(
                     bg: const Color(0xFF3E3E3E),
                     icon: Icons.refresh,
                     iconColor: Colors.white,
@@ -217,7 +287,7 @@ class _CounterPageState extends State<CounterPage>
                       _controller.reset();
                     },
                   ),
-                  _CircleButton(
+                  CircleButton(
                     bg: Colors.white,
                     icon: vm.isPlaying ? Icons.pause : Icons.play_arrow,
                     iconColor: Colors.deepOrange,
@@ -231,7 +301,7 @@ class _CounterPageState extends State<CounterPage>
                       }
                     },
                   ),
-                  _CircleButton(
+                  CircleButton(
                     bg: const Color(0xFF3E3E3E),
                     icon: vm.voiceOn ? Icons.volume_up : Icons.volume_off,
                     iconColor: Colors.white,
@@ -267,29 +337,36 @@ class _CounterPageState extends State<CounterPage>
 
             const SizedBox(height: 10),
 
-            // 저장된 카운터 칩 -> 탭하면 VM에 즉시 반영
+            // 프리셋 칩 리스트
             SizedBox(
-              height: 90,
+              height: 118,
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (_, i) {
-                  final it = _saved[i];
+                  final p = _presets[i];
                   final selected = _selected == i;
-                  return _NextChip(
-                    title: it.name,
-                    sub: '${it.sets}세트 · ${it.reps}회',
+                  final done = doneTodayIds.contains(p.id);
+
+                  _d('칩 id=${p.id} 선택=$selected 완료=$done');
+
+                  return NextRoutineChip(
+                    title: p.name,
+                    sets: p.sets,
+                    reps: p.reps,
                     selected: selected,
+                    done: done,
                     onTap: () async {
                       setState(() => _selected = i);
                       await vm.applyRoutine(
-                        name: it.name,
-                        sets: it.sets,
-                        reps: it.reps,
-                        secPerRep: it.secPerRep,
-                        restSec: it.restSec,
+                        name: p.name,
+                        sets: p.sets,
+                        reps: p.reps,
+                        secPerRep: p.secPerRep,
+                        restSec: p.restSec,
+                        routineId: p.id,
                       );
-                      // 진행 중이었다면 현재 라운드부터 다시
+                      _d('프리셋적용 id=${p.id} 이름=${p.name} ${p.sets}/${p.reps}');
                       if (vm.isPlaying) {
                         _controller.stop();
                         _startRound();
@@ -297,138 +374,30 @@ class _CounterPageState extends State<CounterPage>
                     },
                   );
                 },
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemCount: _saved.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemCount: _presets.length,
               ),
             ),
-            const SizedBox(height: 18),
+
+            if (_showDebugBar)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: DefaultTextStyle(
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  child: Row(
+                    children: [
+                      Text('로그인:${auth.isLoggedIn ? "Y" : "N"}  '),
+                      const SizedBox(width: 8),
+                      Text('선택:${_presets[_selected].id}  '),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text('오늘완료:${doneStr}')),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _RoutineConfig {
-  final String name;
-  final int sets;
-  final int reps;
-  final double secPerRep;
-  final int restSec;
-  const _RoutineConfig({
-    required this.name,
-    required this.sets,
-    required this.reps,
-    this.secPerRep = 2.0,
-    this.restSec = 10,
-  });
-}
-
-class _CircleButton extends StatelessWidget {
-  final Color bg;
-  final Color iconColor;
-  final IconData icon;
-  final VoidCallback onTap;
-  const _CircleButton({
-    required this.bg,
-    required this.icon,
-    required this.iconColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: bg,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 64,
-          height: 64,
-          child: Icon(icon, size: 34, color: iconColor),
-        ),
-      ),
-    );
-  }
-}
-
-class _NextChip extends StatelessWidget {
-  final String title;
-  final String sub;
-  final bool selected;
-  final VoidCallback onTap;
-  const _NextChip({
-    required this.title,
-    required this.sub,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = selected ? Colors.white : const Color(0xFF5A5A5A);
-    final fg = selected ? Colors.black : Colors.white;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            width: 140,
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                if (selected)
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: fg,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-                const Spacer(),
-                Text(sub, style: TextStyle(color: fg.withOpacity(0.9))),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          right: -6,
-          top: -6,
-          child: Material(
-            color: const Color(0xFF8A8A8A),
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () {}, // 필요 시 삭제 동작 연결
-              child: const SizedBox(
-                width: 22,
-                height: 22,
-                child: Icon(Icons.close, size: 14, color: Colors.white),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

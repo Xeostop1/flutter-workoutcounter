@@ -1,58 +1,42 @@
 import 'package:flutter/foundation.dart';
 import '../services/storage_service.dart';
 
-/// 앱 첫 실행/온보딩 스킵 상태를 관리하는 ViewModel.
-/// - 지금은 소셜 로그인 전이므로 isLoggedIn은 항상 false.
-/// - Firebase Auth 연동 후 로그인 로직만 채우면 됨.
 class AuthViewModel extends ChangeNotifier {
   final StorageService storage;
 
   AuthViewModel({required this.storage});
 
-  /// 첫 실행이면 true였다가 bootstrap/load 이후 false로 갱신됨.
   bool firstOpen = true;
-
-  /// 이 디바이스에서 온보딩을 스킵했는지
   bool onboardingSkippedDevice = false;
 
-  /// 로그인 상태(지금은 미구현이므로 false 유지)
+  // ✅ 디폴트는 false지만, fakeSignIn()으로 true로 바꿔 사용
   bool isLoggedIn = false;
 
-  /// 앱 시작 시 호출(스플래시에서 1번 실행)
   Future<void> bootstrap() async {
-    // 첫 실행 여부 체크
     final already = await storage.getFirstOpenDone();
     if (!already) {
+      await storage.setFirstOpenDone();
       firstOpen = true;
-      await storage.setFirstOpenDone(); // 이후부터는 false가 되도록 저장
     } else {
       firstOpen = false;
     }
-
-    // 온보딩 스킵 여부 로드
     onboardingSkippedDevice = await storage.getOnboardingSkipped();
-
     notifyListeners();
   }
 
-  /// main.dart 호환용: load() -> bootstrap()
-  Future<void> load() => bootstrap();
-
-  /// 온보딩 "건너뛰기" / "시작하기"에서 호출
   Future<void> skipOnboarding() async {
     onboardingSkippedDevice = true;
     await storage.setOnboardingSkipped(true);
     notifyListeners();
   }
 
-  /// (선택) 디버그 편의를 위한 초기화: 온보딩 다시 보이게
-  Future<void> resetOnboardingForDebug() async {
-    onboardingSkippedDevice = false;
-    await storage.setOnboardingSkipped(false);
+  // 🔹 여기가 추가: 로그인 구현 전 임시용 가짜 로그인
+  Future<void> fakeSignIn() async {
+    isLoggedIn = true;
     notifyListeners();
   }
 
-  // === 추후 소셜 로그인 연동 시 확장 포인트 ===
+  // (참고) 나중에 실제 구현 시
   // Future<void> signInWithGoogle() async { ... }
   // Future<void> signInWithApple() async { ... }
   // Future<void> logout() async { ... }
