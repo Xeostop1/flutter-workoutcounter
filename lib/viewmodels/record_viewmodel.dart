@@ -22,6 +22,7 @@ class RecordViewModel extends ChangeNotifier {
     required String routineName,
     required int sets,
     required int repsPerSet,
+    required int durationSec,
   }) async {
     final id = '${routineId}_${dateTime.millisecondsSinceEpoch}';
     final rec = WorkoutRecord(
@@ -31,6 +32,7 @@ class RecordViewModel extends ChangeNotifier {
       date: dateTime,
       doneSets: sets,
       doneRepsTotal: sets * repsPerSet,
+      durationSec: durationSec,
     );
 
     await repo.add(rec);

@@ -4,22 +4,25 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 // ViewModels
-import 'viewmodels/auth_viewmodel.dart';
-import 'viewmodels/counter_viewmodel.dart';
+import 'package:counter_01/viewmodels/auth_viewmodel.dart';
+import 'package:counter_01/viewmodels/counter_viewmodel.dart'; // ← CounterPage가 임포트한 파일과 동일하게
 
 // Services
-import 'services/tts_service.dart';
+import 'package:counter_01/services/tts_service.dart';
+
+// Models
+import 'package:counter_01/models/routine.dart';
 
 // Pages
-import 'pages/home/home_page.dart';
-import 'pages/record/record_page.dart';
-import 'pages/routine/routine_page.dart';
-import 'pages/settings/settings_page.dart';
-import 'pages/splash/splash_page.dart';
-import 'pages/auth/landing_page.dart';
-import 'pages/onboarding/onboarding_intro_page.dart';
-import 'pages/onboarding/onboarding_goal_page.dart';
-import 'pages/counter/counter_page.dart';
+import 'package:counter_01/pages/home/home_page.dart';
+import 'package:counter_01/pages/record/record_page.dart';
+import 'package:counter_01/pages/routine/routine_page.dart';
+import 'package:counter_01/pages/settings/settings_page.dart';
+import 'package:counter_01/pages/splash/splash_page.dart';
+import 'package:counter_01/pages/auth/landing_page.dart';
+import 'package:counter_01/pages/onboarding/onboarding_intro_page.dart';
+import 'package:counter_01/pages/onboarding/onboarding_goal_page.dart';
+import 'package:counter_01/pages/counter/counter_page.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.child});
@@ -103,13 +106,17 @@ GoRouter buildRouter(BuildContext context) {
       // 카운터: 탭바 없이 전체 화면 → ShellRoute 바깥
       GoRoute(
         path: '/counter',
-        builder: (context, state) => ChangeNotifierProvider(
-          create: (_) => CounterViewModel(
-            tts: TtsService(),
-            // 기본값: 3세트 15회, 휴식 10초
-          ),
-          child: const CounterPage(),
-        ),
+        builder: (context, state) {
+          // ★ 루틴을 extra로 받아서 CounterPage에 전달
+          final routine = state.extra as Routine;
+          return ChangeNotifierProvider(
+            create: (_) => CounterViewModel(
+              tts: TtsService()..init(), // TTS 초기화
+            ),
+            // Builder로 감싸서 Provider 하위 context 보장
+            child: Builder(builder: (_) => CounterPage(routine: routine)),
+          );
+        },
       ),
 
       // 탭 쉘

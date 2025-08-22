@@ -7,12 +7,15 @@ class Routine {
 
   bool favorite;
   DateTime updatedAt;
+  int restSec;
 
   Routine({
     required this.id,
     required this.name,
+
     this.sets = 3,
     this.reps = 15,
+    this.restSec = 10,
     this.secPerRep = 2.0,
     this.favorite = false,
     DateTime? updatedAt,

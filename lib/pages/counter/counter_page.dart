@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../viewmodels/counter_viewmodel.dart';
+import '../../viewmodels/counter_viewmodel.dart'; // 파일명에 맞춰주세요 (counter_viewmodel3.dart를 쓰면 그걸로)
 import '../../viewmodels/record_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 
-import '../../models/routine_preset.dart';
+import '../../models/routine.dart';
 import '../../widgets/circular_counter.dart';
 import '../../widgets/circle_button.dart';
-import '../../widgets/next_routine_chip.dart';
 
 class CounterPage extends StatefulWidget {
-  const CounterPage({super.key});
+  CounterPage({super.key, required this.routine});
+  final Routine routine; // ✅ 외부에서 선택된 루틴을 객체로 받음
 
   @override
   State<CounterPage> createState() => _CounterPageState();
@@ -20,21 +20,6 @@ class CounterPage extends StatefulWidget {
 class _CounterPageState extends State<CounterPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-
-  // 디버그 출력(짧은 한글)
-  void _d(String m) => debugPrint('$m');
-
-  // 하단 디버그 바 표시 여부
-  final bool _showDebugBar = true;
-  String _lastDoneLog = '';
-
-  // 예시 프리셋 (서비스에선 VM/Repo 사용)
-  final List<RoutinePreset> _presets = [
-    RoutinePreset(id: 'warmup', name: '웜업', sets: 1, reps: 2),
-    RoutinePreset(id: 'squat', name: '스쿼트', sets: 3, reps: 25),
-    RoutinePreset(id: 'lunge', name: '런지', sets: 3, reps: 20),
-  ];
-  int _selected = 0; // 웜업 먼저 선택
 
   @override
   void initState() {
@@ -45,11 +30,10 @@ class _CounterPageState extends State<CounterPage>
     _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed && mounted) {
         final vm = context.read<CounterViewModel>();
-        final phase = await vm.onTickComplete();
+        final phase = await vm.onTickEnd();
 
         if (phase == CounterPhase.done) {
           final auth = context.read<AuthViewModel>();
-          _d('완료 저장시도 로그인?=${auth.isLoggedIn} id=${vm.routineId}');
           if (auth.isLoggedIn) {
             await context.read<RecordViewModel>().saveWorkout(
               dateTime: DateTime.now(),
@@ -57,8 +41,8 @@ class _CounterPageState extends State<CounterPage>
               routineName: vm.routineName,
               sets: vm.totalSets,
               repsPerSet: vm.repsPerSet,
+              durationSec: vm.sessionSeconds,
             );
-            _d('저장완료 id=${vm.routineId}');
             if (!mounted) return;
             ScaffoldMessenger.of(
               context,
@@ -70,19 +54,10 @@ class _CounterPageState extends State<CounterPage>
       }
     });
 
-    // 첫 진입 시 현재 선택 프리셋을 VM에 적용(아이디 일치 보장)
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // ✅ 들어온 루틴을 즉시 반영
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final vm = context.read<CounterViewModel>();
-      final p = _presets[_selected];
-      await vm.applyRoutine(
-        name: p.name,
-        sets: p.sets,
-        reps: p.reps,
-        secPerRep: p.secPerRep,
-        restSec: p.restSec,
-        routineId: p.id,
-      );
-      _d('프리셋적용 id=${p.id} 이름=${p.name} ${p.sets}/${p.reps}');
+      vm.updateRoutine(widget.routine);
     });
   }
 
@@ -94,10 +69,16 @@ class _CounterPageState extends State<CounterPage>
 
   void _startRound() {
     final vm = context.read<CounterViewModel>();
+
+    // 안전 방어: 최소 1초
+    final double durSeconds =
+        vm.currentDurationSeconds.isFinite && vm.currentDurationSeconds > 0
+        ? vm.currentDurationSeconds
+        : 1.0;
+    final int ms = (durSeconds * 1000).toInt();
+
     _controller.stop();
-    _controller.duration = Duration(
-      milliseconds: (vm.currentDurationSeconds * 1000).round(),
-    );
+    _controller.duration = Duration(milliseconds: ms);
     _controller.reset();
     _controller.forward();
   }
@@ -107,35 +88,11 @@ class _CounterPageState extends State<CounterPage>
     const bg = Color(0xFF111111);
 
     final vm = context.watch<CounterViewModel>();
-    final auth = context.watch<AuthViewModel>();
-    final rec = context.watch<RecordViewModel>();
-
-    // 오늘 완료한 routineId 집합
-    final DateTime today = DateTime.now();
-    final Set<String> doneTodayIds = auth.isLoggedIn
-        ? rec.all
-              .where(
-                (r) =>
-                    r.date.year == today.year &&
-                    r.date.month == today.month &&
-                    r.date.day == today.day,
-              )
-              .map((r) => r.routineId)
-              .toSet()
-        : <String>{};
-
-    // 한 줄 로그(집합 변경시에만)
-    final doneStr = '{${doneTodayIds.join(",")}}';
-    if (doneStr != _lastDoneLog) {
-      _lastDoneLog = doneStr;
-      _d('오늘완료 $doneStr');
-    }
 
     // 재생 상태가 되면 라운드 시작
-    if (vm.isPlaying &&
-        !_controller.isAnimating &&
-        !vm.isPaused &&
-        vm.phase != CounterPhase.done) {
+    final canAnimate =
+        vm.isPlaying && !vm.isPaused && vm.phase != CounterPhase.done;
+    if (canAnimate && !_controller.isAnimating) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _startRound());
     }
 
@@ -208,6 +165,7 @@ class _CounterPageState extends State<CounterPage>
                         progress = _controller.value; // 휴식 0→1
                       } else {
                         final total = vm.repsPerSet <= 0 ? 1 : vm.repsPerSet;
+                        // 누적: (완료한 개수 + 현재 1회의 진행도) / 총 횟수
                         progress = (vm.currentRep + _controller.value) / total;
                       }
                       return CircularCounter(
@@ -282,7 +240,7 @@ class _CounterPageState extends State<CounterPage>
                     icon: Icons.refresh,
                     iconColor: Colors.white,
                     onTap: () async {
-                      await vm.resetSet();
+                      await vm.resetCurrentSet();
                       _controller.stop();
                       _controller.reset();
                     },
@@ -296,7 +254,7 @@ class _CounterPageState extends State<CounterPage>
                         vm.pause();
                         _controller.stop();
                       } else {
-                        await vm.play();
+                        await vm.start();
                         _startRound();
                       }
                     },
@@ -311,90 +269,7 @@ class _CounterPageState extends State<CounterPage>
               ),
             ),
 
-            const SizedBox(height: 18),
-
-            // NEXT >>
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'NEXT',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(width: 6),
-                    Icon(Icons.double_arrow, color: Colors.white, size: 18),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // 프리셋 칩 리스트
-            SizedBox(
-              height: 118,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (_, i) {
-                  final p = _presets[i];
-                  final selected = _selected == i;
-                  final done = doneTodayIds.contains(p.id);
-
-                  _d('칩 id=${p.id} 선택=$selected 완료=$done');
-
-                  return NextRoutineChip(
-                    title: p.name,
-                    sets: p.sets,
-                    reps: p.reps,
-                    selected: selected,
-                    done: done,
-                    onTap: () async {
-                      setState(() => _selected = i);
-                      await vm.applyRoutine(
-                        name: p.name,
-                        sets: p.sets,
-                        reps: p.reps,
-                        secPerRep: p.secPerRep,
-                        restSec: p.restSec,
-                        routineId: p.id,
-                      );
-                      _d('프리셋적용 id=${p.id} 이름=${p.name} ${p.sets}/${p.reps}');
-                      if (vm.isPlaying) {
-                        _controller.stop();
-                        _startRound();
-                      }
-                    },
-                  );
-                },
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemCount: _presets.length,
-              ),
-            ),
-
-            if (_showDebugBar)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                child: DefaultTextStyle(
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  child: Row(
-                    children: [
-                      Text('로그인:${auth.isLoggedIn ? "Y" : "N"}  '),
-                      const SizedBox(width: 8),
-                      Text('선택:${_presets[_selected].id}  '),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text('오늘완료:${doneStr}')),
-                    ],
-                  ),
-                ),
-              ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

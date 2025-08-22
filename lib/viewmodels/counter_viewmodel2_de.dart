@@ -10,11 +10,9 @@ class CounterViewModel extends ChangeNotifier {
   final TtsService tts;
   final Future<void> Function(WorkoutRecord record)? onFinished;
 
-  /// 🔎 디버그 로그 on/off (필요할 때만 true)
-  bool debugLogs = true;
-
-  // ✅ 기본 루틴을 하드코딩 -> 나중에 객체로 받는걸로 변경
+  // ✅ 기본 루틴을 하드코딩-> 나중에 객체로 받는걸로 변경
   Routine _routine = Routine(
+    // id: const Uuid().v4(),
     id: "1234",
     name: '스쿼트',
     sets: 2,
@@ -24,9 +22,7 @@ class CounterViewModel extends ChangeNotifier {
   );
 
   CounterViewModel({required this.tts, this.onFinished, bool voiceOn = true})
-    : _voiceOn = voiceOn {
-    _log('초기화 완료 · 루틴=${_routine.name} ${_routine.sets}세트×${_routine.reps}회');
-  }
+    : _voiceOn = voiceOn;
 
   CounterPhase _phase = CounterPhase.idle;
   bool _isPlaying = false;
@@ -41,7 +37,6 @@ class CounterViewModel extends ChangeNotifier {
 
   // === 읽기 전용 ===
   Routine get routine => _routine;
-  String get routineId => _routine.id;
   String get routineName => _routine.name;
   int get totalSets => _routine.sets;
   int get repsPerSet => _routine.reps;
@@ -70,69 +65,51 @@ class CounterViewModel extends ChangeNotifier {
 
   // === 루틴 교체 ===
   void updateRoutine(Routine newRoutine) {
-    _log('루틴 교체 요청 → ${newRoutine.name} ${newRoutine.sets}×${newRoutine.reps}');
     _routine = newRoutine;
     _resetProgress();
     _phase = CounterPhase.rep;
-    _log('루틴 교체 완료 · phase=rep, set=1, rep=0');
     notifyListeners();
   }
 
   // === 컨트롤 ===
   Future<void> start() async {
-    if (_phase == CounterPhase.done) {
-      _log('start() · 완료상태였음 → 초기화');
-      _resetProgress();
-    }
+    if (_phase == CounterPhase.done) _resetProgress();
     _isPlaying = true;
     _isPaused = false;
     _startedAt ??= DateTime.now();
-    _log(
-      '시작 · phase=${_phase.name} · set=$_currentSet/${totalSets} · rep=$_currentRep/${repsPerSet}',
-    );
     notifyListeners();
   }
 
   void pause() {
     _isPlaying = false;
     _isPaused = true;
-    _log('일시정지');
     notifyListeners();
   }
 
   Future<void> resetCurrentSet() async {
     _currentRep = 0;
     _phase = CounterPhase.rep;
-    _log('세트 리셋 · set=$_currentSet, rep=0');
     notifyListeners();
   }
 
   void toggleVoice() {
     _voiceOn = !_voiceOn;
-    _log('음성 ${_voiceOn ? 'ON' : 'OFF'}');
     notifyListeners();
   }
 
   // === 애니메이션 1회 끝날 때마다 호출 ===
   Future<CounterPhase> onTickEnd() async {
-    if (!_isPlaying || _isPaused) {
-      _log('tick 무시 · playing=$_isPlaying, paused=$_isPaused');
-      return _phase;
-    }
+    if (!_isPlaying || _isPaused) return _phase;
 
-    // 휴식 끝 → 다음 세트 시작
     if (_phase == CounterPhase.rest) {
       _phase = CounterPhase.rep;
       _currentRep = 0;
-      _log('휴식 종료 → 세트 시작 · set=$_currentSet');
       if (_voiceOn) await tts.speak('${_currentSet}세트 시작');
       notifyListeners();
       return _phase;
     }
 
-    // 운동 1회 완료
     _currentRep += 1;
-    _log('카운트 · set=$_currentSet · rep=$_currentRep/$repsPerSet');
     if (_voiceOn) await tts.count(_currentRep);
 
     if (_currentRep < repsPerSet) {
@@ -140,21 +117,13 @@ class CounterViewModel extends ChangeNotifier {
       return _phase;
     }
 
-    // 세트 완료
     final isLastSet = _currentSet >= totalSets;
-    _log('세트 완료 · set=$_currentSet/$totalSets');
-
     if (isLastSet) {
-      // 전체 완료
       _phase = CounterPhase.done;
       _isPlaying = false;
       _isPaused = false;
       _finishedAt = DateTime.now();
-      _log('전체 완료 ✅ 총시간=${sessionSeconds}s');
-      // 음성
-      if (_voiceOn) await tts.speak('완료');
 
-      // 기록 생성 → 외부 저장 콜백
       final record = WorkoutRecord(
         id: '${_routine.id}_${_finishedAt!.millisecondsSinceEpoch}',
         routineId: _routine.id,
@@ -164,9 +133,7 @@ class CounterViewModel extends ChangeNotifier {
         doneRepsTotal: totalSets * repsPerSet,
         durationSec: sessionSeconds,
       );
-      _log('기록 생성 → id=${record.id}');
       if (onFinished != null) {
-        _log('기록 저장 콜백 호출');
         await onFinished!(record);
       }
 
@@ -174,16 +141,13 @@ class CounterViewModel extends ChangeNotifier {
       return _phase;
     }
 
-    // 다음 세트로
     _currentSet += 1;
     _currentRep = 0;
 
     if (restSec > 0) {
       _phase = CounterPhase.rest;
-      _log('세트 전환 → 휴식 ${restSec}s · 다음 set=$_currentSet');
     } else {
       _phase = CounterPhase.rep;
-      _log('세트 전환 → 바로 시작 · 다음 set=$_currentSet');
     }
 
     notifyListeners();
@@ -198,18 +162,5 @@ class CounterViewModel extends ChangeNotifier {
     _currentRep = 0;
     _startedAt = null;
     _finishedAt = null;
-    _log('진행상태 초기화');
-  }
-
-  // ===== 내부: 짧은 한글 로그 =====
-  void _log(String msg) {
-    if (!debugLogs) return;
-    if (kDebugMode) {
-      // 한 줄로, 짧게
-      // 예: 🐛 카운트 · set=1 · rep=3/15
-      //     🐛 전체 완료 ✅ 총시간=432s
-      //     🐛 기록 생성 → id=xxxx
-      print('🐛 $msg');
-    }
   }
 }

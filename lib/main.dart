@@ -19,24 +19,27 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final storage = StorageService();
-
   final routineVm = RoutineViewModel(RoutineRepository(storage));
   final recordVm = RecordViewModel(RecordRepository(storage));
   final settingsVm = SettingsViewModel(storage);
-  final authVm = AuthViewModel(storage: storage); // ★ named parameter
+  final authVm = AuthViewModel(storage: storage);
 
-  // ★ 순차 로드(어떤 load()가 Future가 아닐 수 있어서)
-  await routineVm.load();
-  await recordVm.load();
-  await settingsVm.load();
-  await authVm.load();
+  await Future.wait([
+    routineVm.load(),
+    recordVm.load(),
+    settingsVm.load(),
+    authVm.bootstrap(),
+  ]);
+
+  // ✅ 임시: 로그인했다고 가정
+  await authVm.fakeSignIn();
 
   runApp(
     MyApp(
       routineVm: routineVm,
       recordVm: recordVm,
       settingsVm: settingsVm,
-      authVm: authVm,
+      authVm: authVm, // <- 이미 쓰고 있던 자리
     ),
   );
 }
@@ -51,6 +54,35 @@ class MyApp extends StatelessWidget {
   });
 
   final RoutineViewModel routineVm;
+  void main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    final storage = StorageService();
+    final routineVm = RoutineViewModel(RoutineRepository(storage));
+    final recordVm = RecordViewModel(RecordRepository(storage));
+    final settingsVm = SettingsViewModel(storage);
+    final authVm = AuthViewModel(storage: storage);
+
+    await Future.wait([
+      routineVm.load(),
+      recordVm.load(),
+      settingsVm.load(),
+      authVm.bootstrap(),
+    ]);
+
+    // ✅ 임시: 로그인했다고 가정
+    await authVm.fakeSignIn();
+
+    runApp(
+      MyApp(
+        routineVm: routineVm,
+        recordVm: recordVm,
+        settingsVm: settingsVm,
+        authVm: authVm, // <- 이미 쓰고 있던 자리
+      ),
+    );
+  }
+
   final RecordViewModel recordVm;
   final SettingsViewModel settingsVm;
   final AuthViewModel authVm;

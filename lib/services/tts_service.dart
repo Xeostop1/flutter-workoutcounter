@@ -1,3 +1,4 @@
+// lib/services/tts_service.dart
 import 'package:flutter_tts/flutter_tts.dart';
 
 enum TtsVerbosity { quiet, normal, detailed }
@@ -5,6 +6,11 @@ enum TtsVerbosity { quiet, normal, detailed }
 class TtsService {
   final FlutterTts _tts = FlutterTts();
   bool _inited = false;
+
+  // 기본 모드(필요하면 setter로 바꿔 사용)
+  TtsVerbosity _mode = TtsVerbosity.normal;
+  TtsVerbosity get mode => _mode;
+  void setMode(TtsVerbosity m) => _mode = m;
 
   Future<void> init({
     String language = 'ko-KR',
@@ -23,6 +29,29 @@ class TtsService {
     if (text.trim().isEmpty) return;
     await _tts.stop();
     await _tts.speak(text);
+  }
+
+  /// ✅ 숫자 읽기
+  /// - totalReps/mode를 주면 규칙에 따라 "간격 읽기"
+  /// - 안 주면 매회 읽기 (기존 VM의 tts.count(_currentRep)와 100% 호환)
+  Future<void> count(int rep, {int? totalReps, TtsVerbosity? mode}) async {
+    if (!_inited) await init();
+
+    // 규칙 없이 그냥 매회 읽기
+    if (totalReps == null) {
+      await speak(rep.toString());
+      return;
+    }
+
+    final m = mode ?? _mode;
+    final say = shouldSpeakRep(rep: rep, totalReps: totalReps, mode: m);
+    if (say) {
+      await speak(rep.toString());
+    }
+  }
+
+  Future<void> stop() async {
+    await _tts.stop();
   }
 
   Future<void> dispose() async {
