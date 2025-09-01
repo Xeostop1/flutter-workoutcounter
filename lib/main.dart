@@ -1,108 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import 'theme/app_theme.dart';
-import 'repositories/routine_repository.dart';
+import 'repositories/auth_repository.dart';
+import 'repositories/tts_repository.dart';
 import 'repositories/record_repository.dart';
-import 'services/storage_service.dart';
-
-// VMs
-import 'viewmodels/routine_viewmodel.dart';
-import 'viewmodels/record_viewmodel.dart';
-import 'viewmodels/settings_viewmodel.dart';
+import 'repositories/routine_repository.dart';
 import 'viewmodels/auth_viewmodel.dart';
+import 'viewmodels/settings_viewmodel.dart';
+import 'viewmodels/records_viewmodel.dart';
+import 'viewmodels/routines_viewmodel.dart';
+import 'viewmodels/counter_viewmodel.dart';
+import 'app_router.dart';
 
-// ★ 라우터는 alias 로 임포트
-import 'app_router.dart' as app_router;
-
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  final storage = StorageService();
-  final routineVm = RoutineViewModel(RoutineRepository(storage));
-  final recordVm = RecordViewModel(RecordRepository(storage));
-  final settingsVm = SettingsViewModel(storage);
-  final authVm = AuthViewModel(storage: storage);
-
-  await Future.wait([
-    routineVm.load(),
-    recordVm.load(),
-    settingsVm.load(),
-    authVm.bootstrap(),
-  ]);
-
-  // ✅ 임시: 로그인했다고 가정
-  await authVm.fakeSignIn();
-
-  runApp(
-    MyApp(
-      routineVm: routineVm,
-      recordVm: recordVm,
-      settingsVm: settingsVm,
-      authVm: authVm, // <- 이미 쓰고 있던 자리
-    ),
-  );
+  runApp(const AppRoot());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-    required this.routineVm,
-    required this.recordVm,
-    required this.settingsVm,
-    required this.authVm,
-  });
+class AppRoot extends StatefulWidget {
+  const AppRoot({super.key});
+  @override
+  State<AppRoot> createState() => _AppRootState();
+}
 
-  final RoutineViewModel routineVm;
-  void main() async {
-    WidgetsFlutterBinding.ensureInitialized();
-
-    final storage = StorageService();
-    final routineVm = RoutineViewModel(RoutineRepository(storage));
-    final recordVm = RecordViewModel(RecordRepository(storage));
-    final settingsVm = SettingsViewModel(storage);
-    final authVm = AuthViewModel(storage: storage);
-
-    await Future.wait([
-      routineVm.load(),
-      recordVm.load(),
-      settingsVm.load(),
-      authVm.bootstrap(),
-    ]);
-
-    // ✅ 임시: 로그인했다고 가정
-    await authVm.fakeSignIn();
-
-    runApp(
-      MyApp(
-        routineVm: routineVm,
-        recordVm: recordVm,
-        settingsVm: settingsVm,
-        authVm: authVm, // <- 이미 쓰고 있던 자리
-      ),
-    );
-  }
-
-  final RecordViewModel recordVm;
-  final SettingsViewModel settingsVm;
-  final AuthViewModel authVm;
+class _AppRootState extends State<AppRoot> {
+  late final AuthRepository _auth = FakeAuthRepository(); // 나중에 Firebase로 교체
+  late final TtsRepository _tts = TtsRepository();
+  late final RecordRepository _records = MemoryRecordRepository();
+  late final RoutineRepository _routines = SeedRoutineRepository();
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => routineVm),
-        ChangeNotifierProvider(create: (_) => recordVm),
-        ChangeNotifierProvider(create: (_) => settingsVm),
-        ChangeNotifierProvider(create: (_) => authVm),
+        ChangeNotifierProvider(create: (_) => AuthViewModel(_auth)),
+        ChangeNotifierProvider(create: (_) => SettingsViewModel(_tts)),
+        ChangeNotifierProvider(create: (_) => RecordsViewModel(_records)),
+        ChangeNotifierProvider(create: (_) => RoutinesViewModel(_routines)),
+        ChangeNotifierProvider(create: (c) =>
+            CounterViewModel(_tts, c.read<RecordsViewModel>())),
       ],
-      // ★ buildRouter(context)를 위해 한 번 감쌈
       child: Builder(
         builder: (context) {
-          final router = app_router.buildRouter(context); // ★ alias 사용
+          final router = createRouter(context);
           return MaterialApp.router(
-            title: 'Workout Counter',
-            theme: appTheme(),
+            title: 'SPORKLE',
+            theme: ThemeData(
+              colorSchemeSeed: const Color(0xFFFF4A3A),
+              brightness: Brightness.dark,
+              useMaterial3: true,
+            ),
             routerConfig: router,
           );
         },

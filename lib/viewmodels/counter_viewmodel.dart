@@ -1,215 +1,103 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/routine.dart';
 import '../models/workout_record.dart';
-import '../services/tts_service.dart';
-
-/// 카운터가 어떤 상태인지 나타내는 간단한 단계
-enum CounterPhase { idle, rep, rest, done }
+import '../repositories/tts_repository.dart';
+import 'records_viewmodel.dart';
 
 class CounterViewModel extends ChangeNotifier {
-  final TtsService tts;
-  final Future<void> Function(WorkoutRecord record)? onFinished;
+  final TtsRepository _tts;
+  final RecordsViewModel _records;
 
-  /// 🔎 디버그 로그 on/off (필요할 때만 true)
-  bool debugLogs = true;
+  Routine? routine;
+  int setNow = 1;
+  int repNow = 0;
+  bool isRunning = false;
+  bool isResting = false;
+  double progress = 0.0; // 0~1
+  Timer? _timer;
 
-  // ✅ 기본 루틴을 하드코딩 -> 나중에 객체로 받는걸로 변경
-  Routine _routine = Routine(
-    id: "1234",
-    name: '스쿼트',
-    sets: 2,
-    reps: 2,
-    secPerRep: 2.0,
-    restSec: 10,
-  );
+  CounterViewModel(this._tts, this._records);
 
-  CounterViewModel({required this.tts, this.onFinished, bool voiceOn = true})
-    : _voiceOn = voiceOn {
-    _log('초기화 완료 · 루틴=${_routine.name} ${_routine.sets}세트×${_routine.reps}회');
-  }
+  int get defaultSets => 2;
+  int get defaultReps => 10;
+  int get restSeconds => 10;
+  int get repSeconds => routine?.primary.repSeconds ?? 2;
+  int get totalSets => routine?.primary.sets ?? defaultSets;
+  int get repsPerSet => routine?.primary.reps ?? defaultReps;
 
-  CounterPhase _phase = CounterPhase.idle;
-  bool _isPlaying = false;
-  bool _isPaused = false;
-  bool _voiceOn;
+  void attachRoutine(Routine r) { routine = r; reset(); }
 
-  int _currentSet = 1;
-  int _currentRep = 0;
+  void startPause() { isRunning ? _pause() : _start(); }
 
-  DateTime? _startedAt;
-  DateTime? _finishedAt;
-
-  // === 읽기 전용 ===
-  Routine get routine => _routine;
-  String get routineId => _routine.id;
-  String get routineName => _routine.name;
-  int get totalSets => _routine.sets;
-  int get repsPerSet => _routine.reps;
-  double get secPerRep => _routine.secPerRep;
-  int get restSec => _routine.restSec;
-
-  CounterPhase get phase => _phase;
-  bool get isPlaying => _isPlaying;
-  bool get isPaused => _isPaused;
-  bool get voiceOn => _voiceOn;
-
-  int get currentSet => _currentSet;
-  int get currentRep => _currentRep;
-  int get leftReps => (repsPerSet - _currentRep).clamp(0, repsPerSet);
-
-  bool get isRest => _phase == CounterPhase.rest;
-
-  double get currentDurationSeconds =>
-      _phase == CounterPhase.rest ? restSec.toDouble() : secPerRep;
-
-  int get sessionSeconds {
-    if (_startedAt == null) return 0;
-    final end = _finishedAt ?? DateTime.now();
-    return end.difference(_startedAt!).inSeconds;
-  }
-
-  // === 루틴 교체 ===
-  void updateRoutine(Routine newRoutine) {
-    _log('루틴 교체 요청 → ${newRoutine.name} ${newRoutine.sets}×${newRoutine.reps}');
-    _routine = newRoutine;
-    _resetProgress();
-    _phase = CounterPhase.rep;
-    _log('루틴 교체 완료 · phase=rep, set=1, rep=0');
+  void _start() {
+    if (isResting) return;
+    isRunning = true;
+    _startProgressTimer();
     notifyListeners();
   }
 
-  // === 컨트롤 ===
-  Future<void> start() async {
-    if (_phase == CounterPhase.done) {
-      _log('start() · 완료상태였음 → 초기화');
-      _resetProgress();
-    }
-    _isPlaying = true;
-    _isPaused = false;
-    _startedAt ??= DateTime.now();
-    _log(
-      '시작 · phase=${_phase.name} · set=$_currentSet/${totalSets} · rep=$_currentRep/${repsPerSet}',
-    );
-    notifyListeners();
-  }
+  void _pause() { isRunning = false; _timer?.cancel(); notifyListeners(); }
 
-  void pause() {
-    _isPlaying = false;
-    _isPaused = true;
-    _log('일시정지');
-    notifyListeners();
-  }
+  void stop() { _timer?.cancel(); isRunning=false; isResting=false; repNow=0; setNow=1; progress=0; notifyListeners(); _tts.stop(); }
 
-  Future<void> resetCurrentSet() async {
-    _currentRep = 0;
-    _phase = CounterPhase.rep;
-    _log('세트 리셋 · set=$_currentSet, rep=0');
-    notifyListeners();
-  }
+  void reset() => stop();
 
-  void toggleVoice() {
-    _voiceOn = !_voiceOn;
-    _log('음성 ${_voiceOn ? 'ON' : 'OFF'}');
-    notifyListeners();
-  }
+  void _startProgressTimer() {
+    _timer?.cancel();
+    final stepCount = 20; // 부드러운 진행
+    final intervalMs = (repSeconds * 1000 / stepCount).round();
+    _timer = Timer.periodic(Duration(milliseconds: intervalMs), (t) {
+      final step = 1 / stepCount;
+      progress = (repNow + progress + step) / repsPerSet;
 
-  // === 애니메이션 1회 끝날 때마다 호출 ===
-  Future<CounterPhase> onTickEnd() async {
-    if (!_isPlaying || _isPaused) {
-      _log('tick 무시 · playing=$_isPlaying, paused=$_isPaused');
-      return _phase;
-    }
-
-    // 휴식 끝 → 다음 세트 시작
-    if (_phase == CounterPhase.rest) {
-      _phase = CounterPhase.rep;
-      _currentRep = 0;
-      _log('휴식 종료 → 세트 시작 · set=$_currentSet');
-      if (_voiceOn) await tts.speak('${_currentSet}세트 시작');
-      notifyListeners();
-      return _phase;
-    }
-
-    // 운동 1회 완료
-    _currentRep += 1;
-    _log('카운트 · set=$_currentSet · rep=$_currentRep/$repsPerSet');
-    if (_voiceOn) await tts.count(_currentRep);
-
-    if (_currentRep < repsPerSet) {
-      notifyListeners();
-      return _phase;
-    }
-
-    // 세트 완료
-    final isLastSet = _currentSet >= totalSets;
-    _log('세트 완료 · set=$_currentSet/$totalSets');
-
-    if (isLastSet) {
-      // 전체 완료
-      _phase = CounterPhase.done;
-      _isPlaying = false;
-      _isPaused = false;
-      _finishedAt = DateTime.now();
-      _log('전체 완료 ✅ 총시간=${sessionSeconds}s');
-      // 음성
-      if (_voiceOn) await tts.speak('완료');
-
-      // 기록 생성 → 외부 저장 콜백
-      final record = WorkoutRecord(
-        id: '${_routine.id}_${_finishedAt!.millisecondsSinceEpoch}',
-        routineId: _routine.id,
-        routineName: _routine.name,
-        date: _finishedAt!,
-        doneSets: totalSets,
-        doneRepsTotal: totalSets * repsPerSet,
-        durationSec: sessionSeconds,
-      );
-      _log('기록 생성 → id=${record.id}');
-      if (onFinished != null) {
-        _log('기록 저장 콜백 호출');
-        await onFinished!(record);
+      if (progress >= (repNow + 1) / repsPerSet) {
+        repNow++;
+        _tts.speakCount(repNow);
       }
 
+      if (repNow >= repsPerSet) {
+        t.cancel();
+        isRunning = false;
+        progress = 0;
+        repNow = 0;
+
+        if (setNow >= totalSets) {
+          _finishWorkout();
+        } else {
+          _startRest();
+        }
+      }
       notifyListeners();
-      return _phase;
-    }
+    });
+  }
 
-    // 다음 세트로
-    _currentSet += 1;
-    _currentRep = 0;
-
-    if (restSec > 0) {
-      _phase = CounterPhase.rest;
-      _log('세트 전환 → 휴식 ${restSec}s · 다음 set=$_currentSet');
-    } else {
-      _phase = CounterPhase.rep;
-      _log('세트 전환 → 바로 시작 · 다음 set=$_currentSet');
-    }
-
+  void _startRest() async {
+    isResting = true;
     notifyListeners();
-    return _phase;
+    await _tts.speakRest(restSeconds);
+    int left = restSeconds;
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      left--;
+      if (left <= 0) {
+        t.cancel();
+        isResting = false;
+        setNow++;
+        startPause();
+      }
+    });
   }
 
-  void _resetProgress() {
-    _phase = CounterPhase.rep;
-    _isPlaying = false;
-    _isPaused = false;
-    _currentSet = 1;
-    _currentRep = 0;
-    _startedAt = null;
-    _finishedAt = null;
-    _log('진행상태 초기화');
-  }
-
-  // ===== 내부: 짧은 한글 로그 =====
-  void _log(String msg) {
-    if (!debugLogs) return;
-    if (kDebugMode) {
-      // 한 줄로, 짧게
-      // 예: 🐛 카운트 · set=1 · rep=3/15
-      //     🐛 전체 완료 ✅ 총시간=432s
-      //     🐛 기록 생성 → id=xxxx
-      print('🐛 $msg');
+  void _finishWorkout() {
+    final r = routine;
+    if (r != null) {
+      _records.addRecord(WorkoutRecord(
+        date: DateTime.now(),
+        routineId: r.id,
+        routineTitle: r.title,
+        totalReps: totalSets * repsPerSet,
+      ));
     }
+    stop();
   }
 }

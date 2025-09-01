@@ -1,30 +1,30 @@
-import '../services/storage_service.dart';
 import '../models/workout_record.dart';
 
-class RecordRepository {
-  final StorageService storage;
-  RecordRepository(this.storage);
+abstract class RecordRepository {
+  List<WorkoutRecord> byDate(DateTime day);
+  void add(WorkoutRecord record);
+  bool hasAnyOn(DateTime day);
+  Iterable<DateTime> allDays();
+}
 
-  Future<List<WorkoutRecord>> loadAll() async {
-    final raw = await storage.readList(StorageService.recordsKey);
-    final list = raw.map(WorkoutRecord.fromJson).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
-    return list;
+// 메모리 저장소(나중에 Firestore로 교체)
+class MemoryRecordRepository implements RecordRepository {
+  final Map<DateTime, List<WorkoutRecord>> _byDate = {};
+  DateTime _key(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  @override
+  List<WorkoutRecord> byDate(DateTime day) => _byDate[_key(day)]?.toList() ?? [];
+
+  @override
+  void add(WorkoutRecord record) {
+    final k = _key(record.date);
+    _byDate.putIfAbsent(k, () => []);
+    _byDate[k]!.add(record);
   }
 
-  Future<void> add(WorkoutRecord rec) async {
-    final raw = await storage.readList(StorageService.recordsKey);
-    raw.add(rec.toJson());
-    await storage.writeList(StorageService.recordsKey, raw);
-  }
+  @override
+  bool hasAnyOn(DateTime day) => byDate(day).isNotEmpty;
 
-  Future<void> addAll(List<WorkoutRecord> items) async {
-    final raw = await storage.readList(StorageService.recordsKey);
-    raw.addAll(items.map((e) => e.toJson()));
-    await storage.writeList(StorageService.recordsKey, raw);
-  }
-
-  Future<void> clear() async {
-    await storage.writeList(StorageService.recordsKey, []);
-  }
+  @override
+  Iterable<DateTime> allDays() => _byDate.keys;
 }
