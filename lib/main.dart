@@ -23,7 +23,7 @@ class AppRoot extends StatefulWidget {
 }
 
 class _AppRootState extends State<AppRoot> {
-  late final AuthRepository _auth = FakeAuthRepository(); // 나중에 Firebase로 교체
+  late final AuthRepository _auth = FakeAuthRepository(startSignedIn: true); // 나중에 Firebase로 교체
   late final TtsRepository _tts = TtsRepository();
   late final RecordRepository _records = MemoryRecordRepository();
   late final RoutineRepository _routines = SeedRoutineRepository();

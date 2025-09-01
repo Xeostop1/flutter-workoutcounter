@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'pages/login/login_page.dart';
 import 'pages/home/home_page.dart';
+import 'pages/home/character_room_page.dart';
 import 'pages/counter/counter_page.dart';
 import 'pages/records/record_page.dart';
 import 'pages/routines/routine_page.dart';
@@ -23,6 +24,7 @@ GoRouter createRouter(BuildContext context) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+      GoRoute(path: '/buddy', builder: (_, __) => const CharacterRoomPage()),
       ShellRoute(
         builder: (c, s, child) => BottomNavShell(child: child),
         routes: [

@@ -74,6 +74,7 @@ flutter:
   assets:
    - assets/number_words.json
    - assets/images/
+   - assets/icons/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   fonts:
