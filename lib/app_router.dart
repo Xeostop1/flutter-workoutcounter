@@ -17,6 +17,9 @@ import 'pages/routines/routine_page.dart';
 import 'pages/routines/routine_detail_page.dart';
 import 'pages/settings/settings_page.dart';
 
+// ✅ 추가: 네가 만든 하단 네비게이션 쉘
+import 'widgets/bottom_nav_shell.dart'; // 경로가 다르면 네 파일 위치로 바꿔줘
+
 GoRouter createRouter(BuildContext context) {
   final auth = context.read<AuthViewModel>(); // redirect 재평가용
   return GoRouter(
@@ -52,10 +55,9 @@ GoRouter createRouter(BuildContext context) {
       GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
       GoRoute(path: '/buddy', builder: (_, __) => const CharacterRoomPage()),
 
+      // ✅ 변경: 하단 바를 렌더링하는 BottomNavShell 사용
       ShellRoute(
-        builder: (c, s, child) => Scaffold(
-          body: child,
-        ),
+        builder: (c, s, child) => BottomNavShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const HomePage()),
           GoRoute(path: '/records', builder: (_, __) => const RecordsPage()),
