@@ -1,4 +1,4 @@
-import '../data/seed_data.dart';
+import '../data/categories_seed.dart';
 import '../models/routine.dart';
 import '../models/routine_category.dart';
 

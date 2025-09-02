@@ -52,7 +52,10 @@ class HomePage extends StatelessWidget {
             child: SizedBox(
               height: 56,
               child: FilledButton.icon(
-                onPressed: () => context.go('/counter'),
+                onPressed: () {
+                  context.read<RoutinesViewModel>().clearSelectedRoutine(); // ✅ 선택 초기화
+                  context.push('/counter');                                  // /counter로 이동
+                },
                 icon: Image.asset(
                   'assets/images/icon-play_s.png',
                   width: 24,

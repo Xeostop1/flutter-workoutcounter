@@ -47,3 +47,21 @@ final lowerCategory = RoutineCategory(
 
 // 최종 시드
 final categoriesSeed = [lowerCategory];
+
+
+Routine makeDefaultRoutine() {
+  return Routine(
+    id: _u.v4(),
+    title: '기본운동',      // ← 화면 타이틀
+    categoryId: _lowerCatId, // ← 기존 하체 카테고리 id를 사용 (요청사항 그대로)
+    items: [
+      Exercise(
+        id: _u.v4(),
+        name: '기본운동',   // ← 하위 운동 이름
+        reps: 10,
+        sets: 2,
+        repSeconds: 2,
+      ),
+    ],
+  );
+}

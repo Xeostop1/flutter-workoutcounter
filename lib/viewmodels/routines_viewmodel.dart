@@ -16,6 +16,33 @@ class RoutinesViewModel extends ChangeNotifier {
   List<RoutineCategory> categories = [];
   List<Routine> allRoutines = [];
 
+  String? _selectedRoutineId;
+  String? get selectedRoutineId => _selectedRoutineId;
+
+
+  Routine? get selected =>
+      _selectedRoutineId == null ? null : getById(_selectedRoutineId!);
+
+  void selectRoutine(String id) {
+    if (_selectedRoutineId == id) return;
+    _selectedRoutineId = id;
+    notifyListeners();
+  }
+  // ✅ 추가: 선택 해제(루틴 없이 운동하기용)
+  void clearSelectedRoutine() {
+    if (_selectedRoutineId == null) return;
+    _selectedRoutineId = null;
+    notifyListeners();
+  }
+
+  Routine? getById(String id) {
+    try {
+      return allRoutines.firstWhere((r) => r.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // 선택된 카테고리(UUID)
   String? selectedCategoryId;
 
