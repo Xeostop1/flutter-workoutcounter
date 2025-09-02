@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../viewmodels/routines_viewmodel.dart';
 import '../../viewmodels/records_viewmodel.dart';
+import '../../viewmodels/counter_viewmodel.dart'; // ✅ 추가: 카운터에 루틴 붙일 때 필요
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -11,9 +12,9 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final routines = context.watch<RoutinesViewModel>();
-    final records = context.watch<RecordsViewModel>();
+    final records  = context.watch<RecordsViewModel>();
 
-    final day = _calcDay(records);
+    final day     = _calcDay(records);
     final message = _buddyMessage(records);
 
     final cs = Theme.of(context).colorScheme;
@@ -24,7 +25,7 @@ class HomePage extends StatelessWidget {
         title: Row(
           children: [
             Image.asset(
-              'assets/images/logo_sporkle.png', // 상단 좌측 로고 (있으면)
+              'assets/images/logo_sporkle.png',
               height: 22,
               fit: BoxFit.contain,
             ),
@@ -39,15 +40,15 @@ class HomePage extends StatelessWidget {
         children: [
           _BuddyHeader(
             day: day,
-            nickname: '나라', // 필요 시 사용자 닉네임 바인딩
+            nickname: '나라',
             message: message,
             onTap: () => context.push('/buddy'),
           ),
           const SizedBox(height: 16),
 
-          // 루틴 없이 운동하기 버튼
+          // 루틴 없이 운동하기
           Container(
-            margin: const EdgeInsets.only(top: 37, bottom: 6), // 위쪽 마진
+            margin: const EdgeInsets.only(top: 37, bottom: 6),
             child: SizedBox(
               height: 56,
               child: FilledButton.icon(
@@ -68,7 +69,8 @@ class HomePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // 저장된 루틴 섹션
+
+          // 저장된 루틴
           Container(
             decoration: BoxDecoration(
               color: const Color(0xFF5D5D5D),
@@ -83,13 +85,14 @@ class HomePage extends StatelessWidget {
                       child: Text(
                         '저장된 루틴',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20, fontWeight: FontWeight.w800),
+                          color: Colors.white,
+                          fontSize: 20, fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     Text(
                       '1/${routines.allRoutines.isEmpty ? 1 : routines.allRoutines.length}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -106,23 +109,25 @@ class HomePage extends StatelessWidget {
                       title: Text(
                         r.title,
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18, fontWeight: FontWeight.w700),
+                          color: Colors.white,
+                          fontSize: 18, fontWeight: FontWeight.w700,
+                        ),
                       ),
                       subtitle: Text(
                         '${r.items.first.name} 외 ${(r.items.length - 1) < 0 ? 0 : (r.items.length - 1)}개의 운동',
-                        style: TextStyle(
-                          color: const Color(0xFFBEBEBE),),
+                        style: const TextStyle(color: Color(0xFFBEBEBE)),
                       ),
                       trailing: _PlayPill(
                         onTap: () {
-                          routines.select(r);
-                          context.go('/counter');
+                          // ✅ 여기서 선택한 루틴을 카운터에 붙이고 이동
+                          context.read<CounterViewModel>().attachRoutine(r);
+                          context.go('/counter', extra: r);
                         },
                       ),
                       onTap: () {
-                        routines.select(r);
-                        context.go('/counter');
+                        // ✅ 리스트 아이템 탭해도 동일 동작
+                        context.read<CounterViewModel>().attachRoutine(r);
+                        context.go('/counter', extra: r);
                       },
                     ),
                   ),
@@ -168,12 +173,10 @@ class _BuddyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // ===== 회색 큰 원형 + 마스코트 PNG (아바타) =====
+        // 회색 큰 원형 + 마스코트 PNG
         GestureDetector(
           onTap: onTap,
           child: SizedBox(
@@ -182,19 +185,17 @@ class _BuddyHeader extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // 회색 큰 원형 배경
                 Container(
                   width: 150,
                   height: 150,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF5D5D5D), // 회색 큰 원
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF5D5D5D),
                     shape: BoxShape.circle,
                   ),
                 ),
-                // 마스코트 PNG를 원 안의 하단 쪽에 배치
                 Positioned(
-                  left: 26,     // 살짝 왼쪽 치우치게
-                  bottom: 12,   // 아래로 내려 배치
+                  left: 26,
+                  bottom: 12,
                   child: Image.asset(
                     'assets/images/charactor_first.png',
                     width: 48,
@@ -207,23 +208,22 @@ class _BuddyHeader extends StatelessWidget {
         ),
         const SizedBox(width: 14),
 
-        // ===== 오른쪽 텍스트 영역 =====
+        // 오른쪽 텍스트 영역
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Day 캡슐 (스샷처럼 둥근 회색)
+              // Day 캡슐
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5E5E5E), // 진한 회색 캡슐 (원하면 cs.surfaceVariant로 교체)
+                  color: const Color(0xFF5E5E5E),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Text(
-                  'Day 1', // day 변수로 바꾸려면 'Day $day'
-                  style: TextStyle(
+                child: Text(
+                  'Day $day', // ✅ 실제 Day 표시
+                  style: const TextStyle(
                     fontSize: 14,
-                    // fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
@@ -235,14 +235,14 @@ class _BuddyHeader extends StatelessWidget {
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: '$nickname ', // ← 닉네임 + "님의"
+                      text: '$nickname ',
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const TextSpan(
-                      text: '님의 불씨', // ← 뒤쪽 텍스트
+                      text: '님의 불씨',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
@@ -252,7 +252,6 @@ class _BuddyHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 3),
-
 
               // 메시지 카드 (PNG 배경)
               Container(
@@ -284,29 +283,23 @@ class _BuddyHeader extends StatelessWidget {
   }
 }
 
-// 저장된 루틴 오른쪽 연한 화살표 캡슐
+// 저장된 루틴 오른쪽 플레이 버튼
 class _PlayPill extends StatelessWidget {
   final VoidCallback onTap;
   const _PlayPill({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
-      child: Container(
+      child: SizedBox(
         width: 36,
         height: 36,
-        // decoration: BoxDecoration(
-        //   color: cs.surface,
-        //   borderRadius: BorderRadius.circular(999),
-        // ),
         child: Image.asset(
           'assets/images/icon-play_L.png',
           width: 38,
           height: 37,
-          // color: cs.onSurfaceVariant.withOpacity(0.8), // 색상 덮어씌우기 (필요 없으면 제거)
         ),
       ),
     );

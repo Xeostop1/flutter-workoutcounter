@@ -5,15 +5,15 @@ import '../models/routine_category.dart';
 
 const _u = Uuid();
 
-// 1) 카테고리 UUID 먼저 만들기
+// 카테고리 UUID
 final String _lowerCatId = _u.v4();
 
-// 2) 하체(=lower) 카테고리의 하부 루틴들
+// 하체 카테고리의 루틴들 (모두 categoryId = _lowerCatId)
 final List<Routine> _lowerRoutines = [
   Routine(
     id: _u.v4(),
     title: '핵스쿼트',
-    categoryId: _lowerCatId, // ← 카테고리 UUID로 연결
+    categoryId: _lowerCatId,
     items: [
       Exercise(id: _u.v4(), name: '핵스쿼트', reps: 20, sets: 3, repSeconds: 2),
       Exercise(id: _u.v4(), name: '런지',     reps: 20, sets: 3, repSeconds: 2),
@@ -22,7 +22,7 @@ final List<Routine> _lowerRoutines = [
   Routine(
     id: _u.v4(),
     title: '스쿼트',
-    categoryId: _lowerCatId, // ← 카테고리 UUID로 연결
+    categoryId: _lowerCatId,
     items: [
       Exercise(id: _u.v4(), name: '스쿼트',   reps: 25, sets: 3, repSeconds: 2),
       Exercise(id: _u.v4(), name: '카프레이즈', reps: 30, sets: 3, repSeconds: 2),
@@ -31,19 +31,19 @@ final List<Routine> _lowerRoutines = [
   Routine(
     id: _u.v4(),
     title: '힙브릿지',
-    categoryId: _lowerCatId, // ← 카테고리 UUID로 연결
+    categoryId: _lowerCatId,
     items: [
       Exercise(id: _u.v4(), name: '힙브릿지', reps: 20, sets: 3, repSeconds: 2),
     ],
   ),
 ];
 
-// 3) 카테고리(코드는 사람이 읽는 slug, id는 DB PK)
+// 카테고리(이제 code 없음)
 final lowerCategory = RoutineCategory(
-  id: _lowerCatId,   // ✅ DB PK (UUID)// ✅ slug (ex. 'lower', 'back' ...)
+  id: _lowerCatId,  // ✅ UUID
   name: '하체',
   routines: _lowerRoutines,
 );
 
-// 4) 최종 시드 목록
+// 최종 시드
 final categoriesSeed = [lowerCategory];

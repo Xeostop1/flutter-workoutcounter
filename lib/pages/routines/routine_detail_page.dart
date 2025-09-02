@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../viewmodels/counter_viewmodel.dart';
 import '../../viewmodels/routines_viewmodel.dart';
+import 'package:flutter/material.dart';
 
 class RoutineDetailPage extends StatelessWidget {
   final String routineId;
@@ -10,6 +12,7 @@ class RoutineDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = context.watch<RoutinesViewModel>();
     final r = vm.allRoutines.firstWhere((e) => e.id == routineId);
+
     return Scaffold(
       appBar: AppBar(title: Text(r.title)),
       body: ListView(
@@ -23,7 +26,10 @@ class RoutineDetailPage extends StatelessWidget {
           )),
           const SizedBox(height: 24),
           FilledButton(
-            onPressed: () { vm.select(r); Navigator.of(context).pushNamed('/counter'); },
+            onPressed: () {
+              context.read<CounterViewModel>().attachRoutine(r); // ✅ 선택 반영
+              context.push('/counter', extra: r);                // ✅ 카운터로 이동
+            },
             child: const Text('이 루틴으로 운동 시작'),
           ),
         ],
