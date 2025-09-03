@@ -1,31 +1,29 @@
 // lib/widgets/sparkle_calendar.dart
 import 'package:flutter/material.dart';
 
-/// 날짜만 비교(시간 무시)
 bool _sameDate(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
-/// UI를 스샷처럼 만든 커스텀 달력 위젯
 class SparkleCalendar extends StatefulWidget {
   const SparkleCalendar({
     super.key,
     required this.selected,
     required this.onSelected,
     this.initialMonth,
-    this.completedDays = const {}, // 완료일(오버레이)
+    this.completedDays = const {},
   });
 
-  final DateTime selected;                  // 선택된 날짜
-  final ValueChanged<DateTime> onSelected;  // 날짜 탭 콜백
-  final DateTime? initialMonth;             // 처음 표시할 달
-  final Set<DateTime> completedDays;        // 완료된 날짜들(날짜 단위)
+  final DateTime selected;
+  final ValueChanged<DateTime> onSelected;
+  final DateTime? initialMonth;
+  final Set<DateTime> completedDays;
 
   @override
   State<SparkleCalendar> createState() => _SparkleCalendarState();
 }
 
 class _SparkleCalendarState extends State<SparkleCalendar> {
-  late DateTime _month; // 현재 화면에 표시 중인 "달"(해당 달의 1일)
+  late DateTime _month;
 
   @override
   void initState() {
@@ -46,8 +44,7 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
 
   List<DateTime> _days42() {
     final first = DateTime(_month.year, _month.month, 1);
-    // Dart weekday: Mon=1..Sun=7, 우리는 Sun부터 시작 → Sun=0으로 만들기
-    final lead = first.weekday % 7; // Sun:0, Mon:1, ... Sat:6
+    final lead = first.weekday % 7; // Sun=0
     final start = first.subtract(Duration(days: lead));
     return List.generate(42, (i) {
       final d = start.add(Duration(days: i));
@@ -66,52 +63,55 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1F1F1F),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 헤더: <  2025.07   >   [오늘]
+          // ===== Header =====
           Row(
             children: [
               IconButton(
                 onPressed: _prevMonth,
                 icon: const Icon(Icons.chevron_left),
-                visualDensity: VisualDensity.compact,
+                color: Colors.white70,
               ),
-              const SizedBox(width: 4),
-              Text(
-                '${_month.year}.${_month.month.toString().padLeft(2, '0')}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${_month.year}.${_month.month.toString().padLeft(2, '0')}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.0,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 4),
               IconButton(
                 onPressed: _nextMonth,
                 icon: const Icon(Icons.chevron_right),
-                visualDensity: VisualDensity.compact,
+                color: Colors.white70,
               ),
-              const Spacer(),
+              const SizedBox(width: 6),
               TextButton(
                 onPressed: _goToday,
                 style: TextButton.styleFrom(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   backgroundColor: Colors.white.withOpacity(0.12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  foregroundColor: Colors.white,
                 ),
                 child: const Text(
                   '오늘',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w800, height: 1.0),
                 ),
               ),
             ],
@@ -119,7 +119,7 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
 
           const SizedBox(height: 8),
 
-          // 요일 행 (일~토)
+          // ===== Week labels =====
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
@@ -133,77 +133,136 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // 날짜 6x7
-          GridView.count(
-            crossAxisCount: 7,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 8,
-            children: _days42().map((d) {
-              final selected = _sameDate(d, widget.selected);
-              final inMonth = _inMonth(d);
-              final done = _isCompleted(d);
+          // ===== Grid (square cells) =====
+          LayoutBuilder(
+            builder: (context, c) {
+              const hGap = 10.0;
+              const vGap = 18.0;
+              final totalHGap = hGap * 6;
+              final cell = (c.maxWidth - totalHGap) / 7;
 
-              return InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () => widget.onSelected(d),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    // 1) 선택 원(가장 뒤)
-                    if (selected)
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
-                          color: orange,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+              return SizedBox(
+                height: cell * 6 + vGap * 5,
+                child: GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: 42,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    crossAxisSpacing: hGap,
+                    mainAxisSpacing: vGap,
+                    childAspectRatio: 1.0,
+                  ),
+                  itemBuilder: (_, i) {
+                    final d = _days42()[i];
+                    final selected = _sameDate(d, widget.selected);
+                    final inMonth = _inMonth(d);
+                    final isToday = _sameDate(d, DateTime.now());
+                    final done = _isCompleted(d);
 
-                    // 2) 완료 스탬프 (숫자 뒤에 가리지 않도록 숫자보다 먼저 그림)
-                    if (done)
-                      Positioned(
-                        bottom: -2, // 살짝 아래로
-                        child: IgnorePointer(
-                          child: Opacity(
-                            opacity: 0.95,
-                            child: Image.asset(
-                              'assets/images/fire_stamp.png',
-                              width: 18, // 너무 크면 숫자와 겹치니 작게
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // 3) 날짜 숫자 (항상 맨 위)
-                    Text(
-                      '${d.day}',
-                      style: TextStyle(
-                        color: selected
-                            ? Colors.white
-                            : (inMonth
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.4)),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.45),
-                            blurRadius: 2,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    return _DayCell(
+                      day: d.day,
+                      selected: selected,
+                      inMonth: inMonth,
+                      isToday: isToday,
+                      done: done,
+                      onTap: () => widget.onSelected(d),
+                      orange: orange,
+                      cellSize: cell, // <<< 셀 크기 전달(스탬프 사이즈 계산용)
+                    );
+                  },
                 ),
               );
-            }).toList(),
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayCell extends StatelessWidget {
+  const _DayCell({
+    required this.day,
+    required this.selected,
+    required this.inMonth,
+    required this.isToday,
+    required this.done,
+    required this.onTap,
+    required this.orange,
+    required this.cellSize,
+  });
+
+  final int day;
+  final bool selected, inMonth, isToday, done;
+  final VoidCallback onTap;
+  final Color orange;
+  final double cellSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = selected
+        ? Colors.black
+        : (inMonth ? Colors.white : Colors.white.withOpacity(0.45));
+
+    // 불방울 스탬프 크기(셀 크기에 비례)
+    final stampW = cellSize * 0.8;
+    final stampH = cellSize * 0.8;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // ✅ 완료 스탬프: "먼저" 그려서 숫자보다 아래 레이어에 위치
+          if (done)
+            Positioned(
+              // bottom: -cellSize * 0.0, // 살짝 아래로 내려 깔기
+              child: Image.asset(
+                'assets/images/fire_stamp.png', // <- 너가 가진 불방울 이미지
+                width: stampW,
+                height: stampH,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+
+          // 선택 배경(둥근 사각형, 숫자보다 아래)
+          if (selected)
+            Container(
+              width: cellSize * 0.88,
+              height: cellSize * 0.88,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+
+          // 오늘 배경(연한 회색)
+          if (!selected && isToday)
+            Container(
+              width: cellSize * 0.80,
+              height: cellSize * 0.80,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+
+          // ✅ 날짜 숫자: 항상 최상단에 배치 → 스탬프 위로 또렷하게 보임
+          Text(
+            '$day',
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w900,
+              fontSize: cellSize * 0.42,
+              height: 1.0,
+              letterSpacing: 0.2,
+            ),
           ),
         ],
       ),
@@ -218,14 +277,15 @@ class _WeekLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 36,
+      width: 40,
       child: Text(
         text,
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white.withOpacity(0.7),
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          height: 1.0,
+          fontSize: 14,
         ),
       ),
     );

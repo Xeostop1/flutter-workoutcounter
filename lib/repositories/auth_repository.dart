@@ -2,7 +2,7 @@ import 'dart:async';
 
 abstract class AuthRepository {
   Stream<bool> authStateChanges();
-  bool get isSignedIn;                 // ✅ 현재 상태 동기 조회
+  bool get isSignedIn;
   Future<void> signInWithGoogle();
   Future<void> signInWithApple();
   Future<void> signOut();
@@ -22,7 +22,7 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  bool get isSignedIn => _signedIn;     // ✅ 동기 getter
+  bool get isSignedIn => _signedIn; // ✅ 동기 getter
 
   @override
   Stream<bool> authStateChanges() => _ctrl.stream;
