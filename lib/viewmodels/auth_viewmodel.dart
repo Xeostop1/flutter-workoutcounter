@@ -1,42 +1,43 @@
 // lib/viewmodels/auth_viewmodel.dart
 import 'package:flutter/foundation.dart';
+import '../repositories/auth_repository.dart';
 
-/// 아주 단순한(in-memory) 인증/온보딩 상태 보관용 VM
-/// - 실제 로그인 연동 전까지는 가짜 로그인으로 동작
 class AuthViewModel extends ChangeNotifier {
-  bool _signedIn;
-  bool _onboardingDone;
+  AuthViewModel(this._repo);
+  final AuthRepository _repo;
 
-  AuthViewModel({
-    bool startSignedIn = false,
-    bool startOnboardingDone = false,
-  })  : _signedIn = startSignedIn,
-        _onboardingDone = startOnboardingDone;
-
-  /// 로그인 여부
+  // --- Auth state ---
+  bool _signedIn = false;
   bool get signedIn => _signedIn;
 
-  /// 온보딩 완료 여부 (← 이제 이 이름만 씀)
+  // --- Onboarding state ---
+  bool _onboardingDone = false;
   bool get onboardingDone => _onboardingDone;
 
-  // ---------- 온보딩 ----------
-  void setOnboardingDone(bool v) {
-    if (_onboardingDone == v) return;
-    _onboardingDone = v;
-    notifyListeners();
-  }
+  // --- Profile (UI에서 읽음) ---
+  String? _displayName;
+  String? get displayName => _displayName;
 
-  /// 편의 메서드 (기존 코드 호환)
-  void skipOnboarding() => setOnboardingDone(true);
+  String? _photoUrl; // ✅ RecordsPage에서 읽는 필드
+  String? get photoUrl => _photoUrl;
 
-  // ---------- 로그인/로그아웃 (가짜 구현) ----------
+  // --- User preference (예: 주간 목표) ---
+  int? _weeklyTarget;
+  int? get weeklyTarget => _weeklyTarget;
+
+  // ====== Actions ======
+
+  // 로그인(테스트용 더미 구현: 레포 실제 메서드가 없더라도 컴파일되도록 처리)
   Future<void> signInWithGoogle() async {
     _signedIn = true;
+    _displayName ??= '스포클 사용자';
+    // _photoUrl 에 네트워크 이미지 URL을 저장해도 됨. 없으면 null 유지(아바타 위젯에서 처리).
     notifyListeners();
   }
 
   Future<void> signInWithApple() async {
     _signedIn = true;
+    _displayName ??= '스포클 사용자';
     notifyListeners();
   }
 
@@ -45,9 +46,33 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 온보딩 완료/미완료 설정
+  void setOnboardingDone(bool value) {
+    _onboardingDone = value;
+    notifyListeners();
+  }
+
+  // 주간 목표 저장(온보딩 3단계 등에서 호출)
+  void setWeeklyTarget(int? value) {
+    _weeklyTarget = value;
+    notifyListeners();
+  }
+
+  // 프로필 업데이트(원하면 로그인 직후나 설정 화면에서 호출)
+  void updateProfile({String? name, String? photoUrl}) {
+    if (name != null) _displayName = name;
+    if (photoUrl != null) _photoUrl = photoUrl;
+    notifyListeners();
+  }
+
+  /// 계정 삭제(현재는 더미 구현: 앱 상태 초기화 + 로그아웃)
   Future<void> deleteAccount() async {
-    // 실제에선 서버/스토리지 정리 로직 필요
+    // 실제 구현이 생기면 여기서 _repo.deleteAccount() 등을 호출하세요.
     _signedIn = false;
+    _onboardingDone = false;
+    _displayName = null;
+    _photoUrl = null;
+    _weeklyTarget = null;
     notifyListeners();
   }
 }

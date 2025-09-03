@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,19 +23,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<AuthRepository>(
-          create: (_) => FakeAuthRepository(startSignedIn: false), // 반드시 false
-        ),
-        // ✅ 수정: AuthViewModel은 이제 인자 없는 생성자(옵션 플래그만)
+        // ✅ 1) startSignedIn 파라미터 제거 (기본값 사용)
+        Provider<AuthRepository>(create: (_) => FakeAuthRepository()),
+
+        // ✅ 2) AuthViewModel에 레포를 '위치 인자'로 넘김
         ChangeNotifierProvider(
-          create: (_) => AuthViewModel(
-            startSignedIn: false,
-            startOnboardingDone: false,
-          ),
+          create: (ctx) => AuthViewModel(ctx.read<AuthRepository>()),
         ),
 
         Provider<RecordRepository>(create: (_) => InMemoryRecordRepository()),
-        ChangeNotifierProvider(create: (ctx) => RecordsViewModel(ctx.read<RecordRepository>())),
+        ChangeNotifierProvider(
+          create: (ctx) => RecordsViewModel(ctx.read<RecordRepository>()),
+        ),
 
         ChangeNotifierProvider(
           create: (_) => RoutinesViewModel()
