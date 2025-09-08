@@ -12,12 +12,10 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final routines = context.watch<RoutinesViewModel>();
-    final records  = context.watch<RecordsViewModel>();
+    final records = context.watch<RecordsViewModel>();
 
-    final day     = _calcDay(records);
+    final day = _calcDay(records);
     final message = _buddyMessage(records);
-
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -53,8 +51,10 @@ class HomePage extends StatelessWidget {
               height: 56,
               child: FilledButton.icon(
                 onPressed: () {
-                  context.read<RoutinesViewModel>().clearSelectedRoutine(); // ✅ 선택 초기화
-                  context.push('/counter');                                  // /counter로 이동
+                  context
+                      .read<RoutinesViewModel>()
+                      .clearSelectedRoutine(); // ✅ 선택 초기화
+                  context.push('/counter'); // /counter로 이동
                 },
                 icon: Image.asset(
                   'assets/images/icon-play_s.png',
@@ -89,7 +89,8 @@ class HomePage extends StatelessWidget {
                         '저장된 루틴',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 20, fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
@@ -103,8 +104,9 @@ class HomePage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
+
                 ...routines.allRoutines.map(
-                      (r) => Padding(
+                  (r) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -113,11 +115,13 @@ class HomePage extends StatelessWidget {
                         r.title,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 18, fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
+                      // ✅ 빈 리스트도 안전하게 표시
                       subtitle: Text(
-                        '${r.items.first.name} 외 ${(r.items.length - 1) < 0 ? 0 : (r.items.length - 1)}개의 운동',
+                        _routineSubtitle(r),
                         style: const TextStyle(color: Color(0xFFBEBEBE)),
                       ),
                       trailing: _PlayPill(
@@ -157,6 +161,15 @@ class HomePage extends StatelessWidget {
     final today = DateTime.now();
     final hasToday = rec.hasAnyOn(today);
     return hasToday ? '오늘도 고생했어!' : '아직 너무 어두워..';
+  }
+
+  // ✅ 루틴 아이템 수에 따라 안전하게 부제목 생성
+  String _routineSubtitle(dynamic r) {
+    final List items = (r.items as List?) ?? const [];
+    if (items.isEmpty) return '운동 없음';
+    final firstName = (items.first as dynamic).name?.toString() ?? '운동';
+    if (items.length == 1) return firstName;
+    return '$firstName 외 ${items.length - 1}개의 운동';
   }
 }
 
@@ -218,17 +231,17 @@ class _BuddyHeader extends StatelessWidget {
             children: [
               // Day 캡슐
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF5E5E5E),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   'Day $day', // ✅ 실제 Day 표시
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 3),
@@ -259,7 +272,10 @@ class _BuddyHeader extends StatelessWidget {
               // 메시지 카드 (PNG 배경)
               Container(
                 constraints: const BoxConstraints(minHeight: 40),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   image: const DecorationImage(
                     image: AssetImage('assets/images/card_messege.png'),

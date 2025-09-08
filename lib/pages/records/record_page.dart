@@ -14,7 +14,6 @@ class RecordsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 세 가지 프로바이더를 “읽기만” 해서 존재 보장 (섹션 위젯에서 select/consume)
     context.watch<AuthViewModel>();
     context.watch<RecordsViewModel>();
     context.watch<RoutinesViewModel>();

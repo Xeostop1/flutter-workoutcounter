@@ -1,4 +1,5 @@
 // lib/app_router.dart
+import 'package:counter_01/pages/routines/routine_edit_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -70,6 +71,12 @@ GoRouter createRouter(BuildContext context) {
                 builder: (_, st) =>
                     RoutineDetailPage(routineId: st.pathParameters['id']!),
               ),
+              GoRoute(
+                path: 'edit/:id',
+                builder: (_, st) =>
+                    RoutineEditPage(routineId: st.pathParameters['id']!),
+              ),
+              //edit
             ],
           ),
           GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
