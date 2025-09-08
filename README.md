@@ -1,7 +1,11 @@
 # SPARKLE - 운동기록과 가운데를 통한 운동 습관 형성 앱
 
 <div align="center">
-홈 화면 & 운동 기록통계 & 캘린더상세 기능<img src="https://github.com/user-attachments/assets/46c7a0e1-1f99-491e-bcc8-c2d5ec8deace" width="250"/><img src="https://github.com/user-attachments/assets/[두번째이미지URL]" width="250"/><img src="https://github.com/user-attachments/assets/[세번째이미지URL]" width="250"/>
+ <img src="https://github.com/user-attachments/assets/46c7a0e1-1f99-491e-bcc8-c2d5ec8deace" width="250"/>
+ 
+<img src="https://github.com/user-attachments/assets/[두번째이미지URL]" width="250"/>
+
+  <img src="https://github.com/user-attachments/assets/[세번째이미지URL]" width="250"/>
 </div>
 
 
