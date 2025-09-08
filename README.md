@@ -1,14 +1,7 @@
 # SPARKLE - 운동기록과 가운데를 통한 운동 습관 형성 앱
 
 <div align="center">
-
-![login](https://github.com/user-attachments/assets/5f3b85d1-d604-4109-bb33-444d5cec7b2a)
-<img width="275" height="712" alt="루틴-진행" src="https://github.com/user-attachments/assets/5ca4768a-f9c9-48ea-ba58-b9c4d7cfedb0" />
-<img width="275" height="712" alt="기록-직접추가" src="https://github.com/user-attachments/assets/5115fc93-205b-4f05-99cb-9adf7f748a17" />
-
-
-
-
+<img width="1155" height="596" alt="image" src="https://github.com/user-attachments/assets/b8c8a88a-e621-4baa-92d0-b47801093fc4" />
 </div>
 
 
