@@ -1,16 +1,73 @@
-# counter_01
+# SPARKLE - 운동기록과 가운데를 통한 운동 습관 형성 앱
 
-A new Flutter project.
+<div align="center">
+  <img src="app_screenshots.png" alt="SPARKLE 앱 스크린샷" width="800"/>
+</div>
 
-## Getting Started
+## 📱 개요
 
-This project is a starting point for a Flutter application.
+SPARKLE은 Flutter와 Dart로 개발한 운동 기록/가운데 메트릭레이션 앱입니다. 사용자의 운동 습관 형성을 돕고, 직관적인 UI/UX를 통해 지속적인 운동 동기를 제공합니다.
 
-A few resources to get you started if this is your first Flutter project:
+### ✨ 주요 기능
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Flutter & Dart 개발**: 크로스플랫폼 지원으로 iOS/Android 모두 사용 가능
+- **MVVM 아키텍처**: 적용으로 구조적이고 확장 가능한 설계
+- **볼륨 마스코트를 활용한 운동 루틴 및 세트 정보 카운트 기능**: 재정
+- **운동 습관 형성을 돕는 개인 맞춤형 운동 관리 앱**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🎯 설계 및 배포 전
+
+- **MVVM 아키텍처를 적용**하여 투-로직 분리 및 유지보수성 강화
+- **상태 관리 패턴(Provider)을 활용해 운동 기록 카운더 로직과 UI 상태를 일관되게 관리**
+- **실제 트로 크리스 롤링과 애니메이션을 UI 요소로 데이터를 측정하는 기능 솔루션**
+- **Firebase와 이용한 사용자 인증 및 데이터 연동을 경험하여, 실제 서비스 가능한 수준의 딥 구조 세계 역량 확보**
+- **GitHub의 일원화 협업 통해 집팀 기획을 기술적으로 구현하며, 기획-디자인-개발 간 협업 프로세스를 경험**
+
+## 🛠 기술 스택
+
+| 분야 | 기술 |
+|------|------|
+| **프레임워크** | Flutter |
+| **언어** | Dart |
+| **백엔드** | Firebase (Storage) |
+| **인증** | 구글 OAuth 2.0 |
+| **아키텍처** | MVVM Pattern |
+| **상태관리** | Provider |
+
+## 📱 주요 화면
+
+### 1. 홈 화면
+- 직관적인 운동 기록 인터페이스
+- 일일 운동 목표 및 진행률 표시
+
+### 2. 운동 기록 화면
+- 세트별 운동 기록 관리
+- 실시간 카운터 기능
+
+### 3. 통계 화면
+- 운동 습관 시각화
+- 월별/주별 운동 패턴 분석
+
+### 4. 캘린더 화면
+- 운동 일정 관리
+- 운동 기록 히스토리
+
+## 🚀 설치 및 실행
+
+### 사전 요구사항
+- Flutter SDK 3.0+
+- Dart 2.17+
+- Firebase 계정 및 프로젝트 설정
+
+
+## 📱 사용법
+
+1. **앱 설치 후 구글 계정으로 로그인**
+2. **홈 화면에서 운동 계획 설정**
+3. **운동 시작 버튼을 눌러 기록 시작**
+4. **세트별 운동량과 시간을 기록**
+5. **통계 화면에서 운동 패턴 확인**
+
+<div align="center">
+  Made with ❤️ by SPARKLE Team
+</div>
