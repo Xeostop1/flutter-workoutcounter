@@ -1,3 +1,4 @@
+// lib/pages/records/record_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,28 +15,28 @@ class RecordsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 존재 보장
     context.watch<AuthViewModel>();
     context.watch<RecordsViewModel>();
     context.watch<RoutinesViewModel>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('기록'), centerTitle: true),
-      body: const Padding(
-        padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 1) 사용자 헤더
-            UserHeaderSection(),
-            SizedBox(height: 16),
-
-            // 2sections) 캘린더
-            CalendarSection(),
-            SizedBox(height: 16),
-
-            // 3) 선택한 날짜의 기록 리스트
-            Expanded(child: DailyRecordsSection()),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              UserHeaderSection(),
+              SizedBox(height: 16),
+              CalendarSection(),
+              SizedBox(height: 16),
+              // ↓ 리스트도 부모 스크롤에 종속
+              DailyRecordsSection(embed: true),
+            ],
+          ),
         ),
       ),
     );

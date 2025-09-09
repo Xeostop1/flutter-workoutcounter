@@ -110,7 +110,7 @@ class _CounterPageState extends State<CounterPage> {
               const Text('루틴 데이터가 없습니다. 루틴을 먼저 추가해 주세요.'),
               const SizedBox(height: 12),
               FilledButton(
-                onPressed: () => context.go('/'),
+                onPressed: () => context.go('/home'),
                 child: const Text('홈으로'),
               ),
             ],
@@ -152,57 +152,26 @@ class _CounterPageState extends State<CounterPage> {
 
               const SizedBox(height: 16),
 
-              // 중앙: 원형 링 + 숫자
+              // 중앙: 원형 링 (내부 텍스트는 위젯이 렌더링)
               Expanded(
                 child: Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      GradientCircularCounter(
-                        progress: rest ? 0 : vm.progress,
-                        size: 240,
-                        thickness: 22,
-                        dim: rest, // 휴식이면 회색 단색 모드
-                        bgColor: cs.onSurface.withOpacity(0.12),
-                        dimColor: cs.onSurface.withOpacity(0.35),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          //운동 세트
-                          _numberWithUnit(
-                            value: '${vm.setNow}',
-                            unit: 'Set',
-                            valueStyle: TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.w900,
-                              color: rest ? cs.onSurface.withOpacity(0.35) : cs.onSurface,
-                            ),
-                            unitStyle: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: rest ? cs.onSurface.withOpacity(0.35) : cs.onSurface,
-                            ),
-                          ),
-                          //운동 회수
-                          const SizedBox(height: 12),
-                          _numberWithUnit(
-                            value: rest ? '${vm.restLeftSeconds}' : '${vm.repNow}',
-                            unit:  rest ? '초' : '회',
-                            valueStyle: TextStyle(
-                              fontSize: 56,
-                              fontWeight: FontWeight.w900,
-                              color: rest ? cs.onSurface.withOpacity(0.35) : cs.onSurface,
-                            ),
-                            unitStyle: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: rest ? cs.onSurface.withOpacity(0.35) : cs.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  child: GradientCircularCounter(
+                    progress: rest ? 0 : vm.progress,
+                    size: 240,
+                    thickness: 22,
+                    dim: rest, // 휴식이면 회색 단색 모드
+                    // 배경/그라데이션 컬러 스펙
+                    bgColor: const Color(0xFFF3AE94),
+                    gradient1: const Color(0xFFFFDEA9),
+                    gradient2: const Color(0xFFFF6E38),
+                    gradient3: const Color(0xFFEF7F4C),
+                    dimColor: cs.onSurface.withOpacity(0.35),
+
+                    // 링 중앙 텍스트
+                    setNumber: vm.setNow,
+                    reps: rest ? vm.restLeftSeconds : vm.repNow,
+                    setLabel: 'Set',
+                    repsLabel: rest ? '초' : '회',
                   ),
                 ),
               ),

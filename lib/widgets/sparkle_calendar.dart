@@ -19,14 +19,14 @@ class SparkleCalendar extends StatefulWidget {
     this.showTodayButton = true,
   });
 
-  final DateTime selected; // 선택된 날짜
+  final DateTime selected;                 // 선택된 날짜
   final ValueChanged<DateTime> onSelected; // 날짜 탭 콜백
-  final DateTime? initialMonth; // 처음 표시할 달
-  final Set<DateTime> completedDays; // 완료된 날짜들 (날짜 단위만 사용)
-  final double scale; // 달력 크기 스케일
-  final String stampAsset; // 완료 스탬프 에셋 경로
-  final double stampScale; // 완료 스탬프 크기 스케일
-  final bool showTodayButton; // '오늘' 버튼 표시 여부
+  final DateTime? initialMonth;            // 처음 표시할 달
+  final Set<DateTime> completedDays;       // 완료된 날짜(날짜 단위만 사용)
+  final double scale;                      // 달력 크기 스케일
+  final String stampAsset;                 // 완료 스탬프 에셋 경로
+  final double stampScale;                 // 완료 스탬프 크기 스케일
+  final bool showTodayButton;              // '오늘' 버튼 표시 여부
 
   @override
   State<SparkleCalendar> createState() => _SparkleCalendarState();
@@ -52,12 +52,21 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
     widget.onSelected(DateTime(now.year, now.month, now.day));
   }
 
-  List<DateTime> _days42() {
+  /// 이달 1일이 포함된 주의 '일요일'부터,
+  /// 다음 달 1일이 포함된 주의 '토요일'까지 반환 (가변 5~6주)
+  List<DateTime> _visibleDays() {
+    // 시작(이달 1일이 포함된 주의 일요일)
     final first = DateTime(_month.year, _month.month, 1);
-    // Dart weekday: Mon=1..Sun=7, 우리는 Sun부터 시작 → Sun=0으로 만들기
-    final int lead = first.weekday % 7; // Sun:0, Mon:1, ... Sat:6
-    final DateTime start = first.subtract(Duration(days: lead));
-    return List.generate(42, (i) {
+    final lead = first.weekday % 7; // Sun=0, Mon=1 ... Sat=6
+    final start = first.subtract(Duration(days: lead));
+
+    // 끝(다음달 1일이 포함된 주의 토요일)
+    final nextFirst = DateTime(_month.year, _month.month + 1, 1);
+    final nextLead = nextFirst.weekday % 7;
+    final endInclusive = nextFirst.add(Duration(days: 6 - nextLead));
+
+    final total = endInclusive.difference(start).inDays + 1;
+    return List.generate(total, (i) {
       final d = start.add(Duration(days: i));
       return DateTime(d.year, d.month, d.day);
     });
@@ -72,22 +81,16 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
     const Color orange = Color(0xFFFF6B35);
     final double scale = widget.scale.clamp(0.7, 1.2);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1F1F1F),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        16 * scale,
-        14 * scale,
-        16 * scale,
-        16 * scale,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ===== 헤더: <  2025.07   >   [오늘]
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 상단 라인
+        const Divider(height: 1, color: Color(0x33FFFFFF)),
+
+        // ===== 헤더: <  2025.07   >   [오늘]
+        Padding(
+          padding: EdgeInsets.fromLTRB(16 * scale, 14 * scale, 16 * scale, 0),
+          child: Row(
             children: [
               IconButton(
                 onPressed: _prevMonth,
@@ -117,9 +120,7 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
                   onPressed: _goToday,
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.symmetric(
-                      horizontal: 12 * scale,
-                      vertical: 6 * scale,
-                    ),
+                        horizontal: 12 * scale, vertical: 6 * scale),
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
@@ -136,11 +137,14 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
                 ),
             ],
           ),
+        ),
 
-          SizedBox(height: 8 * scale),
+        SizedBox(height: 8 * scale),
 
-          // ===== 요일 행 (일~토)
-          Row(
+        // ===== 요일 행 (일~토)
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               _WeekLabel('일'),
@@ -152,28 +156,36 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
               _WeekLabel('토'),
             ],
           ),
+        ),
 
-          SizedBox(height: 10 * scale),
+        SizedBox(height: 10 * scale),
 
-          // ===== 날짜 6x7 (레이아웃에 맞춰 셀 크기 계산)
-          LayoutBuilder(
+        // ===== 날짜 그리드 (가변 길이)
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+          child: LayoutBuilder(
             builder: (context, constraints) {
               final double gap = 8.0 * scale;
               final double gridW = constraints.maxWidth;
               final double cellSize = (gridW - gap * 6) / 7;
 
-              // 셀 내부에서 쓰는 수치들(전부 double 타입)
               final double selectDia = cellSize * 0.88;
               final double stampW = cellSize * (0.92 * widget.stampScale);
               final double stampH = stampW * 1.05;
 
-              return GridView.count(
-                crossAxisCount: 7,
+              final days = _visibleDays();
+
+              return GridView.builder(
+                itemCount: days.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 12 * scale,
+                  crossAxisSpacing: gap,
+                ),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12 * scale,
-                crossAxisSpacing: gap,
-                children: _days42().map((d) {
+                itemBuilder: (_, i) {
+                  final d = days[i];
                   final bool selected = _sameDate(d, widget.selected);
                   final bool inMonth = _inMonth(d);
                   final bool done = _isCompleted(d);
@@ -216,8 +228,8 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
                               color: selected
                                   ? Colors.white
                                   : (inMonth
-                                        ? Colors.white
-                                        : Colors.white.withOpacity(0.4)),
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.4)),
                               fontWeight: FontWeight.w800,
                               fontSize: 14 * scale,
                             ),
@@ -226,12 +238,18 @@ class _SparkleCalendarState extends State<SparkleCalendar> {
                       ),
                     ),
                   );
-                }).toList(),
+                },
               );
             },
           ),
-        ],
-      ),
+        ),
+
+        // 하단 라인
+        const Padding(
+          padding: EdgeInsets.only(top: 12),
+          child: Divider(height: 1, color: Color(0x33FFFFFF)),
+        ),
+      ],
     );
   }
 }

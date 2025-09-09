@@ -1,125 +1,203 @@
+// lib/widgets/gradient_circular_counter.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// 자연스러운 원형 그라데이션 링
-/// - progress: 0.0~1.0 (작을수록 더 연함)
-/// - fromColor(연한) → toColor(진한) 으로, 끝 색을 progress에 따라 점점 진하게
 class GradientCircularCounter extends StatelessWidget {
-  final double progress;      // 0~1
-  final double size;
-  final double thickness;
-  final double startAngle;    // 기본 12시(-pi/2)
-  final bool dim;             // 휴식: 회색 단색
-  final Color fromColor;      // 시작(연한 주황)
-  final Color toColor;        // 끝(진한 주황)
-  final Color bgColor;        // 배경 링
-  final Color dimColor;       // 휴식 링
-
   const GradientCircularCounter({
     super.key,
     required this.progress,
+    this.setNumber = 1,            // ← 기본값
+    this.reps = 10,                // ← 기본값
     this.size = 240,
     this.thickness = 22,
     this.startAngle = -math.pi / 2,
     this.dim = false,
-    this.fromColor = const Color(0xFFFFB391), // 연한 주황
-    this.toColor   = const Color(0xFFFD4400), // 진한 주황
-    this.bgColor   = const Color(0xFFF3AE94),
-    this.dimColor  = const Color(0xFFBDBDBD),
+    this.trackColor = const Color(0xFFF3AE94),
+    this.dimColor = const Color(0xFFBDBDBD),
+    this.gradient1 = const Color(0xFFFFDEA9),
+    this.gradient2 = const Color(0xFFFF6E38),
+    this.gradient3 = const Color(0xFFEF7F4C),
+    this.bgColor,                  // ← 호환용 alias (trackColor 대체)
+    this.setLabel = 'Set',
+    this.repsLabel = '회',
   });
+
+  final double progress;
+
+  // 선택 파라미터 + 기본값
+  final int setNumber;
+  final int reps;
+
+  final double size;
+  final double thickness;
+  final double startAngle;
+  final bool dim;
+
+  final Color trackColor;
+  final Color dimColor;
+  final Color gradient1;
+  final Color gradient2;
+  final Color gradient3;
+
+  // old API alias
+  final Color? bgColor;
+
+  final String setLabel;
+  final String repsLabel;
 
   @override
   Widget build(BuildContext context) {
+    final clamped = progress.clamp(0.0, 1.0);
+
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _RingPainter(
-          progress: progress.clamp(0.0, 1.0),
-          thickness: thickness,
-          startAngle: startAngle,
-          dim: dim,
-          dimColor: dimColor,
-          colorBg: bgColor,
-          fromColor: fromColor,
-          toColor: toColor,
-        ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size.square(size),
+            painter: _RingPainter(
+              progress: clamped,
+              thickness: thickness,
+              startAngle: startAngle,
+              dim: dim,
+              trackColor: bgColor ?? trackColor, // alias 적용
+              dimColor: dimColor,
+              gradient1: gradient1,
+              gradient2: gradient2,
+              gradient3: gradient3,
+            ),
+          ),
+          Container(
+            width: size - thickness * 1.6,
+            height: size - thickness * 1.6,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    text: '$setNumber',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '  $setLabel',
+                        style: TextStyle(
+                          color: Colors.black.withOpacity(0.7),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                RichText(
+                  text: TextSpan(
+                    text: '$reps',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '  $repsLabel',
+                        style: TextStyle(
+                          color: Colors.black.withOpacity(0.7),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _RingPainter extends CustomPainter {
-  final double progress;
-  final double thickness;
-  final double startAngle;
-  final bool dim;
-  final Color dimColor;
-  final Color colorBg;
-  final Color fromColor;
-  final Color toColor;
-
   _RingPainter({
     required this.progress,
     required this.thickness,
     required this.startAngle,
     required this.dim,
+    required this.trackColor,
     required this.dimColor,
-    required this.colorBg,
-    required this.fromColor,
-    required this.toColor,
+    required this.gradient1,
+    required this.gradient2,
+    required this.gradient3,
   });
+
+  final double progress;
+  final double thickness;
+  final double startAngle;
+  final bool dim;
+
+  final Color trackColor;
+  final Color dimColor;
+  final Color gradient1;
+  final Color gradient2;
+  final Color gradient3;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = (math.min(size.width, size.height) - thickness) / 2;
-
-    // 배경 링
-    final bg = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = thickness
-      ..color = dim ? dimColor : colorBg;
-    canvas.drawCircle(center, radius, bg);
-
-    if (dim) return; // 휴식 모드: 진행 링 없음
-
-    // 진행 각도
     final rect = Rect.fromCircle(center: center, radius: radius);
-    final sweep = (progress <= 0) ? 0.0001 : (2 * math.pi * progress);
 
-    // 🔑 핵심: progress가 작을 때는 endColor를 거의 연하게 유지
-    // (지수로 완만하게: 초반엔 천천히, 후반에 급격히 진해짐)
-    final eased = math.pow(progress, 1.6).toDouble(); // 1.6~2.0 권장
-    final endColor = Color.lerp(fromColor, toColor, eased)!;
-
-    // 시작은 항상 연한색 → 진행 끝으로 갈수록 endColor(진해짐)
-    final gradient = SweepGradient(
-      startAngle: startAngle,
-      endAngle: startAngle + sweep,
-      colors: [fromColor, endColor],
-      stops: const [0.0, 1.0],
-      tileMode: TileMode.clamp,
-    );
-
-    final fg = Paint()
+    // 배경 트랙
+    final trackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = thickness
       ..strokeCap = StrokeCap.round
-      ..shader = gradient.createShader(rect);
+      ..color = dim ? dimColor : trackColor;
+    canvas.drawArc(rect, 0, math.pi * 2, false, trackPaint);
 
-    canvas.drawArc(rect, startAngle, sweep, false, fg);
+    if (dim) return;
 
-    // 끝점 하이라이트도 동일한 endColor 사용 (초반엔 연함)
-    if (progress > 0) {
-      final endAngle = startAngle + sweep;
-      final end = Offset(
-        center.dx + radius * math.cos(endAngle),
-        center.dy + radius * math.sin(endAngle),
-      );
-      final head = Paint()..color = endColor.withOpacity(0.95);
-      canvas.drawCircle(end, thickness * 0.30, head);
-    }
+    final sweep = (math.pi * 2) * progress;
+    if (sweep <= 0) return;
+
+    // 3색 그라데이션
+    final shader = SweepGradient(
+      startAngle: startAngle,
+      endAngle: startAngle + math.pi * 2,
+      colors: [gradient1, gradient2, gradient3, gradient1],
+      stops: const [0.0, 0.45, 0.8, 1.0],
+    ).createShader(rect);
+
+    final arcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = thickness
+      ..strokeCap = StrokeCap.round
+      ..shader = shader;
+
+    canvas.drawArc(rect, startAngle, sweep, false, arcPaint);
+
+    // 끝점 하이라이트
+    final endAngle = startAngle + sweep;
+    final end = Offset(
+      center.dx + radius * math.cos(endAngle),
+      center.dy + radius * math.sin(endAngle),
+    );
+    canvas.drawCircle(end, thickness * 0.30, Paint()..color = gradient3.withOpacity(0.95));
   }
 
   @override
@@ -128,8 +206,9 @@ class _RingPainter extends CustomPainter {
           old.thickness != thickness ||
           old.startAngle != startAngle ||
           old.dim != dim ||
+          old.trackColor != trackColor ||
           old.dimColor != dimColor ||
-          old.colorBg != colorBg ||
-          old.fromColor != fromColor ||
-          old.toColor != toColor;
+          old.gradient1 != gradient1 ||
+          old.gradient2 != gradient2 ||
+          old.gradient3 != gradient3;
 }
