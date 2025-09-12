@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../../viewmodels/routines_viewmodel.dart';
 import '../../viewmodels/records_viewmodel.dart';
-import '../../viewmodels/counter_viewmodel.dart'; // ✅ 추가: 카운터에 루틴 붙일 때 필요
+import '../../viewmodels/counter_viewmodel.dart';
+import '../../viewmodels/auth_viewmodel.dart';
+import '../../viewmodels/streak_viewmodel.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -13,9 +15,15 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final routines = context.watch<RoutinesViewModel>();
     final records = context.watch<RecordsViewModel>();
+    final auth = context.watch<AuthViewModel>();
 
-    final day = _calcDay(records);
+    final day = context.watch<StreakViewModel>().day;
     final message = _buddyMessage(records);
+
+    final String nickname = (() {
+      final n = auth.user?.name?.trim();
+      return (n != null && n.isNotEmpty) ? n : '사용자';
+    })();
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +46,7 @@ class HomePage extends StatelessWidget {
         children: [
           _BuddyHeader(
             day: day,
-            nickname: '나라',
+            nickname: nickname,
             message: message,
             onTap: () => context.push('/buddy'),
           ),
