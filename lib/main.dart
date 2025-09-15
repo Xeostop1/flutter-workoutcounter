@@ -16,13 +16,30 @@ import 'viewmodels/streak_viewmodel.dart';
 import 'data/categories_seed.dart';
 import 'app_router.dart' as app_router;
 
-import 'package:firebase_core/firebase_core.dart'; // ✅ firebase_core만 유지
-// import 'firebase_options.dart'; // ❌ 당장은 주석/삭제
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform; // ****
+import 'dart:io' show Platform; // ****
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // ✅ 모바일(iOS/Android)은 google-services 파일만 있으면 옵션 없이 초기화 가능
-  await Firebase.initializeApp();
+  // **** 이미 초기화된 경우 건너뛰기 + 플랫폼별 초기화 방식 분기
+  if (Firebase.apps.isEmpty) {
+    try {
+      if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
+        // iOS/macOS는 plist 기반으로 네이티브가 먼저 초기화될 수 있어 옵션 없이 호출 // ****
+        await Firebase.initializeApp(); // ****
+      } else {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform, // ****
+        );
+      }
+    } on FirebaseException catch (e) {
+      // 네이티브가 먼저 올렸다면 duplicate-app이 날 수 있음 → 무시하고 진행 // ****
+      if (e.code != 'duplicate-app') rethrow; // ****
+    }
+  }
   runApp(const MyApp());
 }
 

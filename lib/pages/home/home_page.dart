@@ -8,6 +8,7 @@ import '../../viewmodels/counter_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/streak_viewmodel.dart';
 
+import '../../widgets/free_workout_sheet.dart';
 import '../../widgets/home/buddy_header.dart';
 import '../../widgets/home/routine_list.dart';
 
@@ -57,9 +58,12 @@ class HomePage extends StatelessWidget {
           SizedBox(
             height: 56,
             child: FilledButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                // 선택된 루틴 초기화(자유 운동으로 시작할 것이므로)
                 context.read<RoutinesViewModel>().clearSelectedRoutine();
-                context.push('/counter');
+
+                // 자유 운동 설정 액션시트 표시 → 내부에서 시작하기 누르면 /counter로 이동
+                await showFreeWorkoutSheet(context);
               },
               label: const Text('루틴 없이 운동하기'),
               style: FilledButton.styleFrom(
