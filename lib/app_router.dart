@@ -19,7 +19,6 @@ import 'pages/routines/routine_detail_page.dart';
 import 'pages/settings/settings_page.dart';
 import 'pages/routines/routine_edit_page.dart';
 
-
 // ✅ 하단 네비 쉘
 import 'widgets/bottom_nav_shell.dart';
 
@@ -64,10 +63,7 @@ GoRouter createRouter(BuildContext context) {
         builder: (c, s, child) => BottomNavShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const HomePage()),
-          GoRoute(
-            path: '/records',
-            builder: (_, __) => const RecordsPage(),
-          ),
+          GoRoute(path: '/records', builder: (_, __) => const RecordsPage()),
           GoRoute(
             path: '/routines',
             builder: (_, __) => const RoutinePage(),
@@ -81,11 +77,12 @@ GoRouter createRouter(BuildContext context) {
                 builder: (_, st) =>
                     RoutineDetailPage(routineId: st.pathParameters['id']!),
               ),
-              GoRoute(
-                path: 'edit/:id',
-                builder: (_, st) =>
-                    RoutineEditPage(routineId: st.pathParameters['id']!),
-              ),
+              //꼭 다시 해야 해
+              // GoRoute(
+              //   path: 'edit/:id',
+              //   builder: (_, st) =>
+              //       RoutineEditPage(routineId: st.pathParameters['id']!),
+              // ),
             ],
           ),
           GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
@@ -100,15 +97,14 @@ GoRouter createRouter(BuildContext context) {
         builder: (context, state) {
           final routine = state.extra is Routine
               ? state.extra as Routine
-              : null;                               
-          return CounterPage(routine: routine);      
+              : null;
+          return CounterPage(routine: routine);
         },
       ),
 
       GoRoute(
         path: '/counter/:rid',
-        builder: (_, st) =>
-            CounterPage(routineId: st.pathParameters['rid']!), 
+        builder: (_, st) => CounterPage(routineId: st.pathParameters['rid']!),
       ),
     ],
   );
