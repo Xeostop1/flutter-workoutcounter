@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui' show ImageFilter;
 
 import '../../models/routine.dart';
 import '../../models/exercise.dart';
@@ -10,11 +11,17 @@ import '../../viewmodels/counter_viewmodel.dart';
 import '../../viewmodels/routines_viewmodel.dart';
 import '../../widgets/gradient_circular_counter.dart';
 import '../../widgets/confirm_popup.dart';
+import '../../widgets/end_workout_dialog.dart';
 
-/// 라우트: /counter 또는 /counter/:rid
+
+
+/// 라우트: /counter (extra로 Routine 전달 가능) 또는 /counter/:rid
+/// - /counter      : context.go('/counter', extra: routine)
+/// - /counter/:rid : pathParameters['rid'] 로 루틴 로드
 class CounterPage extends StatefulWidget {
-  final String? routineId; // 라우터에서 전달받는 routineId (없을 수도 있음)
-  const CounterPage({super.key, this.routineId});
+  final String? routineId;
+  final Routine? routine;
+  const CounterPage({super.key, this.routineId, this.routine});
 
   @override
   State<CounterPage> createState() => _CounterPageState();
@@ -30,22 +37,20 @@ class _CounterPageState extends State<CounterPage> {
     final rvm = context.read<RoutinesViewModel>();
     final cvm = context.read<CounterViewModel>();
 
-    // ✅ 우선순위: rid 없으면 '디폴트' 먼저 → 선택/첫 루틴은 백업
+    // 우선순위: extra → rid → selected/first → default
     Routine? r;
-    if (widget.routineId == null) {
-      // "루틴 없이 운동하기" 진입
+    if (widget.routine != null) {
+      r = widget.routine;
+    } else if (widget.routineId == null) {
       r = makeDefaultRoutine();
     } else {
-      // 특정 루틴 id로 진입
       r = rvm.getById(widget.routineId!);
-      if (r != null) rvm.selectRoutine(r.id); // 선택 동기화(옵션)
+      if (r != null) rvm.selectRoutine(r.id);
     }
 
-    // 혹시 실패 시 백업
     r ??= rvm.selected;
     r ??= rvm.allRoutines.isNotEmpty ? rvm.allRoutines.first : null;
 
-    // 빌드가 끝난 뒤 안전하게 attach (notifyListeners 안전)
     if (r != null && !_scheduledAttach) {
       _scheduledAttach = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -55,51 +60,40 @@ class _CounterPageState extends State<CounterPage> {
     }
   }
 
-  /// 뒤로가기 처리:
-  /// - 진행 중이면 모달 → 네: 부분 기록 후 홈으로 이동 / 아니요: 머무름
-  /// - 진행 중 아니면: 스택 있으면 pop, 없으면 홈 이동
   Future<bool> _handleBack(BuildContext context) async {
     final vm = context.read<CounterViewModel>();
 
+    // 운동 중이 아니면 기본 뒤로가기
     if (!vm.inProgress) {
-      if (Navigator.of(context).canPop()) {
-        return true; // 기본 pop
-      } else {
-        context.go('/'); // go로 들어와 스택이 없을 때
-        return false;
-      }
+      if (Navigator.of(context).canPop()) return true;
+      context.go('/home');            // 홈 루트로
+      return false;
     }
 
-    final ok = await showConfirmPopup(
-      context,
-      title: '운동을 끝낼까요?',
-      message: '진행한 운동까지만 기록돼요',
-      cancelText: '아니요',
-      okText: '네',
-    );
+    // 운동 중이면 모달 표시
+    final ok = await showEndWorkoutDialog(context);
 
     if (ok == true) {
-      await vm.finishNowAndRecord();
-      if (context.mounted) context.go('/'); // 홈으로
-      return false; // 기본 pop 막기
+      await vm.finishNowAndRecord();  // 진행한 만큼 기록
+      if (context.mounted) context.go('/home');
+      return false;                   // 기본 pop 막기(이미 이동)
     }
-    return false;
+    return false;                     // 취소: 머무르기
   }
+
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<CounterViewModel>();
     final rvm = context.watch<RoutinesViewModel>();
 
-    // 빌드 시에도 rid가 없으면 디폴트 우선 적용(깜빡임 최소화)
+    // 빌드 시에도 동일 우선순위
     final Routine? r = vm.routine
-        ?? (widget.routineId == null
-            ? makeDefaultRoutine() // ✅ rid 없으면 디폴트 먼저
-            : rvm.getById(widget.routineId!))
+        ?? widget.routine
+        ?? (widget.routineId == null ? makeDefaultRoutine() : rvm.getById(widget.routineId!))
         ?? rvm.selected
         ?? (rvm.allRoutines.isNotEmpty ? rvm.allRoutines.first : null);
 
-    // 루틴 데이터가 정말 없을 때
     if (r == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('운동')),
@@ -152,14 +146,16 @@ class _CounterPageState extends State<CounterPage> {
 
               const SizedBox(height: 16),
 
-              // 중앙: 원형 링 (내부 텍스트는 위젯이 렌더링)
+              // 중앙: 휴식이면 회색 도넛+큰 숫자, 아니면 기존 링
               Expanded(
                 child: Center(
-                  child: GradientCircularCounter(
-                    progress: rest ? 0 : vm.progress,
+                  child: rest
+                      ? const _RestRingContainer()
+                      : GradientCircularCounter(
+                    progress: vm.progress,
                     size: 240,
                     thickness: 22,
-                    dim: rest, // 휴식이면 회색 단색 모드
+                    dim: false,
                     // 배경/그라데이션 컬러 스펙
                     bgColor: const Color(0xFFF3AE94),
                     gradient1: const Color(0xFFFFDEA9),
@@ -169,9 +165,9 @@ class _CounterPageState extends State<CounterPage> {
 
                     // 링 중앙 텍스트
                     setNumber: vm.setNow,
-                    reps: rest ? vm.restLeftSeconds : vm.repNow,
+                    reps: vm.repNow,
                     setLabel: 'Set',
-                    repsLabel: rest ? '초' : '회',
+                    repsLabel: '회',
                   ),
                 ),
               ),
@@ -303,7 +299,6 @@ class ExerciseTray extends StatelessWidget {
           final isCurrent = i == vm.exerciseIndex;
           final isDone = vm.exerciseDone.isNotEmpty && vm.exerciseDone[i];
 
-          // 현재 타일은 진행 수치, 그 외는 0/n
           final repsText = isCurrent ? '${vm.repNow}/${ex.reps}' : '0/${ex.reps}';
 
           return Padding(
@@ -340,71 +335,207 @@ class ExerciseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 기본/현재 타일 공통 스타일
     const orange = Color(0xFFFF6B35);
-    final baseBg = const Color(0xFF6C6C6C);
-    final currentBg = Colors.white;
+    const baseBg = Color(0xFF6C6C6C);
+    const cardRadius = 14.0;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Material(
-          color: isCurrent ? currentBg : baseBg,
-          borderRadius: BorderRadius.circular(14),
-          elevation: isCurrent ? 6 : 0,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              width: 120,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: isCurrent
-                    ? [
-                  BoxShadow(
-                    color: orange.withOpacity(0.6),
-                    blurRadius: 16,
-                    spreadRadius: 0.5,
-                  )
-                ]
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: isCurrent ? Colors.black : Colors.white,
-                      )),
-                  const SizedBox(height: 8),
-                  Text(
-                    repsText, // 예: 3/25
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: isCurrent ? Colors.black : Colors.white,
+    // 현재 타일: 글로우 + 흰 카드
+    if (isCurrent) {
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // 붉은 그라데이션 글로우 (뒤에 깔기)
+          Positioned.fill(
+            child: Center(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  width: 132,  // 카드보다 살짝 크게
+                  height: 92,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(cardRadius + 2),
+                    gradient: const RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.75,
+                      colors: [
+                        Color(0xFFFF9A5C), // 밝은 주황
+                        Color(0xFFFF6B35), // 진한 주황
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
 
-        // 완료 뱃지(DONE) 오버레이
-        if (isDone)
-          Positioned(
-            left: 8,
-            top: -6,
-            child: Image.asset(
-              'assets/images/stamp_done.png', // 프로젝트 파일명에 맞게 수정
-              width: 90,
-              fit: BoxFit.contain,
+          // 흰색 카드
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(cardRadius),
+            elevation: 6,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(cardRadius),
+              child: Container(
+                width: 120,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  border: Border.all(color: orange.withOpacity(0.9), width: 1.6),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      repsText, // 예: 3 / 20
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-      ],
+
+          // 완료 뱃지(필요 시)
+          if (isDone)
+            Positioned(
+              left: 8,
+              top: -6,
+              child: Image.asset(
+                'assets/images/stamp_done.png',
+                width: 90,
+                fit: BoxFit.contain,
+              ),
+            ),
+        ],
+      );
+    }
+
+    // 일반 타일(현재 아님): 기존 회색 카드
+    return Material(
+      color: baseBg,
+      borderRadius: BorderRadius.circular(cardRadius),
+      elevation: 0,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(cardRadius),
+        child: Container(
+          width: 120,
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                repsText,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// ===== 휴식 전용 링 위젯(회색 도넛 + 중앙 큰 숫자) =====
+
+class _RestRingContainer extends StatelessWidget {
+  const _RestRingContainer();
+
+  @override
+  Widget build(BuildContext context) {
+    final secs = context.select<CounterViewModel, int>((v) => v.restLeftSeconds);
+    return _RestRing(seconds: secs);
+  }
+}
+
+class _RestRing extends StatelessWidget {
+  const _RestRing({required this.seconds});
+  final int seconds;
+
+  @override
+  Widget build(BuildContext context) {
+    const double size = 240;
+    const double thickness = 22;
+    const double inner = size - thickness * 2;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 회색 도넛 링
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.transparent,
+              border: Border.all(
+                color: const Color(0xFFD4D4D4),
+                width: thickness,
+              ),
+            ),
+          ),
+          // 내부 흰 원
+          Container(
+            width: inner,
+            height: inner,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+          // 큰 초 숫자
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            transitionBuilder: (child, anim) =>
+                FadeTransition(opacity: anim, child: child),
+            child: Text(
+              '$seconds',
+              key: ValueKey(seconds),
+              style: const TextStyle(
+                fontSize: 56,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF5A5A5A),
+                height: 1.0,
+                letterSpacing: -1.0,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

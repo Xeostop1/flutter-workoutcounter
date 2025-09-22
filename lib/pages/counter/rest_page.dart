@@ -5,9 +5,8 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/counter_viewmodel.dart';
 import '../../viewmodels/routines_viewmodel.dart';
 import '../../models/exercise.dart';
-import '../../widgets/gradient_circular_counter.dart';
 
-/// 휴식 전용 화면
+/// 휴식 전용 화면 (스샷 스타일)
 class RestPage extends StatelessWidget {
   const RestPage({super.key});
 
@@ -15,13 +14,20 @@ class RestPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cvm = context.watch<CounterViewModel>();
     final rvm = context.watch<RoutinesViewModel>();
-    final routine = cvm.routine ?? rvm.selected;
 
-    final cs = Theme.of(context).colorScheme;
+    final routine = cvm.routine ?? rvm.selected;
+    final items = routine?.items ?? const <Exercise>[];
+
+    // 안전한 현재 인덱스/아이템 계산
+    final idx = items.isEmpty ? 0 : cvm.exerciseIndex.clamp(0, items.length - 1);
+    final current = items.isEmpty ? null : items[idx];
 
     return Scaffold(
+      backgroundColor: const Color(0xFF171717),
       appBar: AppBar(
-        title: Text(routine?.title ?? '휴식'),
+        backgroundColor: const Color(0xFF171717),
+        elevation: 0,
+        title: Text(routine?.title ?? '자유 운동'),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left),
@@ -30,95 +36,101 @@ class RestPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {}, // 필요시 연결
+            onPressed: () {}, // 필요 시 연결
           ),
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            const SizedBox(height: 20),
+            Column(
+              children: [
+                const SizedBox(height: 8),
 
-            // 상단 "휴식" 캡슐
-            _pill(text: '휴식', color: Colors.black),
+                // 상단 흰 캡슐 (현재 운동명)
+                _pill(
+                  text: current?.name ?? '휴식',
+                  color: Colors.black,
+                ),
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-            // 중앙 원형 카운터(회색 링 + 흰 배경, 숫자만 큼직하게)
-            Expanded(
-              child: Center(
-                child: GradientCircularCounter(
-                  progress: 0, // 휴식 화면은 진행 링 비표시
-                  dim: true, // 회색 단색 링
-                  size: 240,
-                  thickness: 22,
-                  bgColor: const Color(0xFFD0D0D0), // 링 배경 회색
-                  dimColor: const Color(0xFFBDBDBD), // dim 모드 색
-                  centerBackgroundColor: Colors.white, // 내부 흰색
-                  // 중앙 텍스트 (숫자만)
-                  reps: cvm.restLeftSeconds,
-                  repsStyle: const TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF5A5A5A),
+                // 중앙: 회색 도넛 링 + 내부 흰 원 + 큰 숫자(남은 휴식 초)
+                Expanded(
+                  child: Center(
+                    child: _RestRing(seconds: cvm.restLeftSeconds),
                   ),
-                  repsLabel: null,
+                ),
+
+                // 하단 컨트롤 버튼 3개 (회색)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _circleBtn(
+                        icon: Icons.replay,
+                        onTap: () => cvm.reset(),
+                        bg: const Color(0xFF4A4A4A),
+                        fg: Colors.white70,
+                      ),
+                      _circleBtn(
+                        size: 64,
+                        icon: cvm.isRunning ? Icons.pause : Icons.play_arrow,
+                        onTap: () => cvm.startPause(),
+                        bg: const Color(0xFF6D6D6D),
+                        fg: Colors.white,
+                        elevation: 6,
+                      ),
+                      _circleBtn(
+                        icon: Icons.volume_up,
+                        onTap: () => cvm.setTts(!cvm.ttsOn),
+                        bg: const Color(0xFF4A4A4A),
+                        fg: Colors.white70,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 70), // 좌하단 카드와 간격 확보
+              ],
+            ),
+
+            // 좌하단 흰 카드(현재 운동 + 3/20), 주황 글로우
+            if (current != null)
+              Positioned(
+                left: 14,
+                bottom: 18,
+                child: _miniTile(
+                  title: current.name,
+                  repsText: '${_doneReps(cvm, idx, current.reps)}/${current.reps}',
                 ),
               ),
-            ),
-
-            // 하단 세 개 컨트롤 버튼
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _circleBtn(
-                    icon: Icons.replay,
-                    onTap: () => cvm.reset(), // 휴식/운동 모두 초기화
-                    bg: cs.onSurface.withOpacity(0.20),
-                    fg: Colors.white70,
-                  ),
-                  _circleBtn(
-                    size: 64,
-                    icon: cvm.isRunning ? Icons.pause : Icons.play_arrow,
-                    onTap: () => cvm.startPause(),
-                    bg: cs.onSurface.withOpacity(0.20),
-                    fg: Colors.white,
-                    elevation: 4,
-                  ),
-                  _circleBtn(
-                    icon: Icons.volume_up,
-                    onTap: () => cvm.setTts(!cvm.ttsOn),
-                    bg: cs.onSurface.withOpacity(0.20),
-                    fg: Colors.white70,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // 하부 운동 트레이 (가로 스크롤)
-            const _ExerciseTray(),
-
-            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  // ===== 재사용 작은 위젯 =====
+  // ===== 내부 작은 위젯/헬퍼 =====
+
+  // 현재 인덱스 이전: 전부 완료, 이후: 0, 현재: 진행 중인 반복 수
+  int _doneReps(CounterViewModel vm, int index, int totalReps) {
+    if (vm.routine == null) return 0;
+    if (index < vm.exerciseIndex) return totalReps;
+    if (index > vm.exerciseIndex) return 0;
+    return vm.repNow;
+  }
+
   Widget _pill({required String text, required Color color}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withOpacity(0.30),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -127,7 +139,7 @@ class RestPage extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.w800,
           color: color,
         ),
@@ -158,129 +170,111 @@ class RestPage extends StatelessWidget {
       ),
     );
   }
-}
 
-/// 하부 운동 카드 트레이 — 현재/완료 표시
-class _ExerciseTray extends StatelessWidget {
-  const _ExerciseTray();
-
-  @override
-  Widget build(BuildContext context) {
-    final vm = context.watch<CounterViewModel>();
-    final items = vm.routine?.items ?? const <Exercise>[];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: List.generate(items.length, (i) {
-          final ex = items[i];
-          final isCurrent = i == vm.exerciseIndex;
-          final isDone = vm.exerciseDone.isNotEmpty && vm.exerciseDone[i];
-
-          final repsText = '${vm.getDoneRepsOf(i)}/${ex.reps}';
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: _ExerciseTile(
-              title: ex.name,
-              repsText: repsText,
-              isCurrent: isCurrent,
-              isDone: isDone,
-              onTap: () => context.read<CounterViewModel>().selectExercise(i),
+  Widget _miniTile({required String title, required String repsText}) {
+    const orange = Color(0xFFFF6B35);
+    return Container(
+      width: 120,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          // 주황빛 글로우
+          BoxShadow(
+            color: orange.withOpacity(0.55),
+            blurRadius: 16,
+            spreadRadius: 0.5,
+          ),
+        ],
+        border: Border.all(color: orange.withOpacity(0.9), width: 1.6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
             ),
-          );
-        }),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            repsText, // 예: 3/20
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ExerciseTile extends StatelessWidget {
-  final String title;
-  final String repsText;
-  final bool isCurrent;
-  final bool isDone;
-  final VoidCallback onTap;
+/// 회색 도넛 링 + 내부 흰 원 + 큰 숫자(남은 휴식 초)
+class _RestRing extends StatelessWidget {
+  const _RestRing({required this.seconds});
 
-  const _ExerciseTile({
-    required this.title,
-    required this.repsText,
-    required this.isCurrent,
-    required this.isDone,
-    required this.onTap,
-  });
+  final int seconds;
 
   @override
   Widget build(BuildContext context) {
-    const orange = Color(0xFFFF6B35);
-    final baseBg = const Color(0xFF6C6C6C);
-    final currentBg = Colors.white;
+    const double size = 240;
+    const double thickness = 22;
+    const double inner = size - thickness * 2; // 내부 흰 원 지름
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Material(
-          color: isCurrent ? currentBg : baseBg,
-          borderRadius: BorderRadius.circular(14),
-          elevation: isCurrent ? 6 : 0,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              width: 120,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: isCurrent
-                    ? [
-                        BoxShadow(
-                          color: orange.withOpacity(0.6),
-                          blurRadius: 16,
-                          spreadRadius: 0.5,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: isCurrent ? Colors.black : Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    repsText,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: isCurrent ? Colors.black : Colors.white,
-                    ),
-                  ),
-                ],
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 회색 도넛 링 (Border로 구현)
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.transparent,
+              border: Border.all(
+                color: const Color(0xFFD4D4D4), // 링 색상(밝은 회색)
+                width: thickness,
               ),
             ),
           ),
-        ),
-
-        // 완료 뱃지 오버레이
-        if (isDone)
-          Positioned(
-            left: 8,
-            top: -6,
-            child: Image.asset(
-              'assets/images/stamp_done.png', // 프로젝트 에셋명에 맞게
-              width: 90,
-              fit: BoxFit.contain,
+          // 내부 흰 원
+          Container(
+            width: inner,
+            height: inner,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
             ),
           ),
-      ],
+          // 큰 초 숫자 (부드러운 전환)
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            transitionBuilder: (child, anim) =>
+                FadeTransition(opacity: anim, child: child),
+            child: Text(
+              '$seconds',
+              key: ValueKey(seconds),
+              style: const TextStyle(
+                fontSize: 56,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF5A5A5A),
+                height: 1.0,
+                letterSpacing: -1.0,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

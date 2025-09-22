@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../models/exercise.dart';
 import '../models/routine.dart';
-import '../viewmodels/counter_viewmodel.dart';
+// import '../viewmodels/counter_viewmodel.dart';                 // *** 더 이상 여기서 VM을 만지지 않음 → 제거 권장
 import 'sheets/app_sheet.dart';
 
 Future<void> showFreeWorkoutSheet(BuildContext context) async {
@@ -15,29 +15,34 @@ Future<void> showFreeWorkoutSheet(BuildContext context) async {
 
   bool valid() =>
       nameCtrl.text.trim().isNotEmpty &&
-      (int.tryParse(setsCtrl.text) ?? 0) > 0 &&
-      (int.tryParse(repsCtrl.text) ?? 0) > 0;
+          (int.tryParse(setsCtrl.text) ?? 0) > 0 &&
+          (int.tryParse(repsCtrl.text) ?? 0) > 0 &&
+          (int.tryParse(secsCtrl.text) ?? 0) > 0;                               // ***
 
   void start() {
     if (!valid()) return;
     final nowId = DateTime.now().microsecondsSinceEpoch.toString();
-    final ex = Exercise(
-      id: 'FREE-$nowId',
-      name: nameCtrl.text.trim(),
-      sets: int.parse(setsCtrl.text),
-      reps: int.parse(repsCtrl.text),
-      repSeconds: int.tryParse(secsCtrl.text) ?? 0,
-    );
+
+    // *** adHoc이나 copyWith 등 네 모델에 맞춰 생성(임시 객체로 표시하면 더 안전)
+    final ex = Exercise(                                                     // ***
+      id: 'FREE-$nowId',                                                     // ***
+      name: nameCtrl.text.trim(),                                            // ***
+      sets: int.parse(setsCtrl.text),                                        // ***
+      reps: int.parse(repsCtrl.text),                                        // ***
+      repSeconds: int.parse(secsCtrl.text),                                  // ***
+    );                                                                        // ***
+
     final routine = Routine(
       id: 'FREE-$nowId',
       title: '자유 운동',
       categoryId: 'FREE',
       items: [ex],
     );
-    final cvm = context.read<CounterViewModel>();
-    cvm.attachRoutine(routine);
-    Navigator.of(context).pop(); // 시트 닫기
-    context.go('/counter', extra: routine);
+
+    // final cvm = context.read<CounterViewModel>();                          // ***
+    // cvm.attachRoutine(routine);                                            // ***
+    Navigator.of(context).pop();                                              // 시트 닫기
+    context.go('/counter', extra: routine);                                   // *** extra로만 전달
   }
 
   await showAppSheet<void>(

@@ -1,3 +1,4 @@
+// lib/pages/routines/routine_detail_page.dart
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/counter_viewmodel.dart';
@@ -14,7 +15,24 @@ class RoutineDetailPage extends StatelessWidget {
     final r = vm.allRoutines.firstWhere((e) => e.id == routineId);
 
     return Scaffold(
-      appBar: AppBar(title: Text(r.title)),
+      appBar: AppBar(
+        title: Text(r.title),
+        centerTitle: true,
+        actions: [
+          Consumer<RoutinesViewModel>(
+            builder: (_, rvm, __) {
+              final isFav = rvm.isFavorite(routineId);
+              return IconButton(
+                icon: Icon(isFav ? Icons.star_rounded : Icons.star_outline_rounded),
+                color: isFav ? const Color(0xFFFF6B35) : Colors.white70,
+                onPressed: () => rvm.toggleFavorite(routineId),
+                tooltip: isFav ? '즐겨찾기 해제' : '즐겨찾기',
+              );
+            },
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -27,8 +45,8 @@ class RoutineDetailPage extends StatelessWidget {
           const SizedBox(height: 24),
           FilledButton(
             onPressed: () {
-              context.read<CounterViewModel>().attachRoutine(r); // ✅ 선택 반영
-              context.push('/counter', extra: r);                // ✅ 카운터로 이동
+              context.read<CounterViewModel>().attachRoutine(r);
+              context.push('/counter', extra: r);
             },
             child: const Text('이 루틴으로 운동 시작'),
           ),
