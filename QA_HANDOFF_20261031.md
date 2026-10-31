@@ -38,6 +38,19 @@
 ## 아직 분리해서 확인할 부분
 
 - 실제 iPhone의 Xcode/CocoaPods 빌드·서명·Google/Apple 인증·음성 청취는 맥에서 확인해야 합니다. Windows에서 완료했다고 주장하지 않습니다.
-- Windows Android 에뮬레이터는 앱 실행 전부터 System UI/Bluetooth 오류와 초기 앱 응답 없음이 관찰됐습니다. 워밍업 후 홈과 나의 불씨 진입은 됐지만, 원인을 앱이나 PC 하나로 확정하지 않습니다. Android 빌드/수정 후 실제 화면 결과는 후속 검증 절에 추가합니다.
+- Windows Android 에뮬레이터는 앱 실행 전부터 System UI/Bluetooth 오류와 초기 앱 응답 없음이 관찰됐습니다. GPU를 host로 바꾼 재부팅에서도 System UI·전화·Google 서비스·키보드의 응답 없음이 발생했습니다. 앱 또는 PC 하나가 원인이라고 확정하거나, GPU 변경으로 해결했다고 보고하지 않습니다.
 - 사용자 계정 삭제나 실제 운동 기록 생성/삭제로 시험하지 않았고, 기존 게스트 파일은 해시로만 보존을 확인합니다.
 - 빌드 출력·로컬 기기 파일은 Git으로 이동하지 않습니다. 맥에서 새 소스로 다시 빌드하세요.
+
+## 최종 Android 빌드·실제 화면 확인
+
+- 일반 `lib/main.dart` Android x86_64 debug APK 빌드 성공, 925.7초. 출시용 ARM APK나 스토어 서명 빌드가 아닙니다.
+- 로컬 APK: `verification/mac-handoff-20261031/SPORKLE-mac-handoff-debug.apk`.
+- SHA-256: `53318C950E1121BBAA44D42A453199ADD1F318B81987AF52470D7CB9BE4AC1B1`.
+- 기존 `SPORKLE_Android15_AudioCheck`, `emulator-5572`에 `install -r`로 업데이트 설치 Success. 설치된 `base.apk` 해시와 위 APK가 일치합니다. 초기화·재가입·로그아웃·운동 기록 생성/삭제는 하지 않았습니다.
+- 초기 시스템 응답 없음에서 대기한 뒤 홈 진입, 실제 게스트 Day0와 기존 루틴 없음, 큰 현재 불씨, `바로 운동 시작`을 확인했습니다.
+- 나의 불씨에서 실제 이번 주 목표0/1회와 성장 목록을 펼쳤습니다. 수정 후 자동 스크롤로 현재 불씨 테두리·`현재` 글자와 목록 전체 높이가 화면 안에 들어왔습니다. 수정 전처럼 윗부분만 걸치는 현상은 이번 실행에서 재현되지 않았습니다. 실제 캡처 `native-growth-scroll-before.png` / `native-growth-scroll-after.png` 참조.
+- 13단계 양 끝 가로 이동·성장값 불변은 위젯 테스트에서 통과했습니다. 실제 에뮬레이터의 마우스 휠/드래그 시도는 목록 이동을 확인하지 못했으므로, 실물 iPhone 손가락 스와이프 검증은 남깁니다. 입력 전달 실패인지 앱 동작 문제인지는 이 관찰만으로 확정하지 않습니다.
+- 기록 탭에서 작은 달력, 오늘31일 회색 네모, 빈 기록 안내가 스크롤 없이 함께 보이고 주간 목표가 없는 것을 확인했습니다. `native-records-final.png` 참조. 실제 운동일 도장은 이번 빈 게스트 화면에서 확인하지 않았으며 관련 위젯 테스트와 별개입니다.
+- 게스트 파일은 설치 전/후·화면 탐색 후 모두 SHA-256 `ed475129bf16d369a9db80441e553194a99a4b3268a4a4ac0c9d2c51824fd108`으로 동일했습니다. 이는 이 기기의 파일 보존 확인이지, 실제 계정과의 Firestore 병합 시험 완료를 뜻하지 않습니다.
+- 전체 테스트 로그 `full-tests.log`, 정적 검사 `analyze.log`, 빌드 `build.log`, 회귀 A/B `scroll-repro-before-final.log` / `scroll-repro-after-final.log`, 시스템 ANR 관찰 `host-gpu-anr-after.log`를 로컬 검증 폴더에 보관합니다.
