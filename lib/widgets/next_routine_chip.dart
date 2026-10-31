@@ -42,7 +42,7 @@ class NextRoutineChip extends StatelessWidget {
               boxShadow: [
                 if (selected)
                   BoxShadow(
-                    color: Colors.deepOrange.withOpacity(0.45),
+                    color: Colors.deepOrange.withValues(alpha: 0.45),
                     blurRadius: 28,
                     spreadRadius: 1,
                   ),
@@ -65,7 +65,7 @@ class NextRoutineChip extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '${sets} / $reps', // “세트 / 횟수”
+                    '$sets / $reps', // “세트 / 횟수”
                     style: TextStyle(
                       color: fg,
                       fontWeight: FontWeight.w900,

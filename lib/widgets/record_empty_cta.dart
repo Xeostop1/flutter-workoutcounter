@@ -12,7 +12,7 @@ class RecordEmptyCTA extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

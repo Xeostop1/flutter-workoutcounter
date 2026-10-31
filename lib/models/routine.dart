@@ -16,6 +16,7 @@ class Routine {
   final bool isDraft;           // 편집 중 임시 루틴 여부
   final DateTime? createdAt;    // 생성 시각
   final DateTime? updatedAt;    // 수정 시각
+  final bool ttsEnabled;
 
   const Routine({
     required this.id,
@@ -28,6 +29,7 @@ class Routine {
     this.isDraft = false,
     this.createdAt,
     this.updatedAt,
+    this.ttsEnabled = true,
   });
 
   /// 대표 운동(없으면 기본값)
@@ -52,6 +54,7 @@ class Routine {
     bool? isDraft,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? ttsEnabled,
   }) {
     return Routine(
       id: id ?? this.id,
@@ -64,6 +67,7 @@ class Routine {
       isDraft: isDraft ?? this.isDraft,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      ttsEnabled: ttsEnabled ?? this.ttsEnabled,
     );
   }
 

@@ -1,89 +1,157 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-/// ===== 아이콘 경로(필요하면 여기 수정) =====
-const _kIconSize = 24.0;
+import '../viewmodels/records_viewmodel.dart';
+
+const _iconSize = 24.0;
 const _homeOff = 'assets/icons/nav_home_off.png';
-const _homeOn  = 'assets/icons/nav_home_on.png';
-const _recOff  = 'assets/icons/nav_records_off.png';
-const _recOn   = 'assets/icons/nav_records_on.png';
-const _rtOff   = 'assets/icons/nav_routines_off.png';
-const _rtOn    = 'assets/icons/nav_routines_on.png';
-const _setOff  = 'assets/icons/nav_settings_off.png';
-const _setOn   = 'assets/icons/nav_settings_on.png';
+const _homeOn = 'assets/icons/nav_home_on.png';
+const _settingsOff = 'assets/icons/nav_settings_off.png';
+const _settingsOn = 'assets/icons/nav_settings_on.png';
 
 class BottomNavShell extends StatelessWidget {
-  final Widget child;
   const BottomNavShell({super.key, required this.child});
 
-  int _index(BuildContext c) {
-    final l = GoRouterState.of(c).uri.toString();
-    if (l.startsWith('/records')) return 1;
-    if (l.startsWith('/routines')) return 2;
-    if (l.startsWith('/settings')) return 3;
-    return 0; // /home (기본)
+  final Widget child;
+
+  int _index(BuildContext context) {
+    final location = GoRouterState.of(context).uri.toString();
+    if (location.startsWith('/records')) return 1;
+    if (location.startsWith('/routines')) return 2;
+    if (location.startsWith('/settings')) return 3;
+    return 0;
   }
 
-  void _onTap(BuildContext c, int i) {
-    switch (i) {
-      case 0: c.go('/home'); break;
-      case 1: c.go('/records'); break;
-      case 2: c.go('/routines'); break;
-      case 3: c.go('/settings'); break;
+  void _onTap(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        context.go('/home');
+      case 1:
+        context.go('/records');
+      case 2:
+        context.go('/routines');
+      case 3:
+        context.go('/settings');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final idx = _index(context);
+    final records = context.watch<RecordsViewModel>();
     return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: idx,
-        onDestinationSelected: (i) => _onTap(context, i),
-
-        // 인디케이터 캡슐 없애고(스크린샷 느낌),
-        // 배경은 테마에서 검정색이라면 생략 가능
-        indicatorColor: Colors.transparent,
-        backgroundColor: const Color(0xFF5D5D5D),
-
-        destinations: const [
-          NavigationDestination(
-            label: '운동',
-            icon: _NavImg(_homeOff),
-            selectedIcon: _NavImg(_homeOn),
-          ),
-          NavigationDestination(
-            label: '기록',
-            icon: _NavImg(_recOff),
-            selectedIcon: _NavImg(_recOn),
-          ),
-          NavigationDestination(
-            label: '루틴',
-            icon: _NavImg(_rtOff),
-            selectedIcon: _NavImg(_rtOn),
-          ),
-          NavigationDestination(
-            label: '설정',
-            icon: _NavImg(_setOff),
-            selectedIcon: _NavImg(_setOn),
-          ),
+      body: Column(
+        children: [
+          if (records.recovering ||
+              records.pendingCount > 0 ||
+              records.recoveryFailed)
+            SafeArea(
+              bottom: false,
+              child: MaterialBanner(
+                content: Text(
+                  records.recovering
+                      ? '저장 대기 중인 운동 기록을 복구하고 있어요.'
+                      : records.pendingCount > 0
+                      ? '저장하지 못한 운동 기록 ${records.pendingCount}개가 기기에 보관되어 있어요.'
+                      : '운동 기록 복구를 완료하지 못했어요.',
+                ),
+                actions: [
+                  if (records.recovering)
+                    const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    TextButton(
+                      onPressed: records.retryPendingRecords,
+                      child: const Text('다시 저장하기'),
+                    ),
+                ],
+              ),
+            ),
+          Expanded(child: child),
         ],
+      ),
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            final selected = states.contains(WidgetState.selected);
+            return TextStyle(
+              color: selected
+                  ? const Color(0xFFFF6633)
+                  : const Color(0xFFBDBDBD),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            );
+          }),
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          labelPadding: const EdgeInsets.only(bottom: 20),
+        ),
+        child: DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: Color(0xFF686868))),
+          ),
+          child: NavigationBar(
+            height: 80,
+            selectedIndex: _index(context),
+            onDestinationSelected: (index) => _onTap(context, index),
+            indicatorColor: Colors.transparent,
+            backgroundColor: const Color(0xFF1E1E1E),
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            destinations: const [
+              NavigationDestination(
+                label: '운동',
+                icon: _NavImage(_homeOff),
+                selectedIcon: _NavImage(_homeOn),
+              ),
+              NavigationDestination(
+                label: '기록',
+                icon: Icon(
+                  Icons.event_available_rounded,
+                  color: Color(0xFFBDBDBD),
+                ),
+                selectedIcon: Icon(
+                  Icons.event_available_rounded,
+                  color: Color(0xFFFF6633),
+                ),
+              ),
+              NavigationDestination(
+                label: '루틴',
+                icon: Icon(Icons.assignment_rounded, color: Color(0xFFBDBDBD)),
+                selectedIcon: Icon(
+                  Icons.assignment_rounded,
+                  color: Color(0xFFFF6633),
+                ),
+              ),
+              NavigationDestination(
+                label: '설정',
+                icon: _NavImage(_settingsOff),
+                selectedIcon: _NavImage(_settingsOn),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _NavImg extends StatelessWidget {
-  final String src;
-  const _NavImg(this.src);
+class _NavImage extends StatelessWidget {
+  const _NavImage(this.assetPath);
+
+  final String assetPath;
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      src,
-      width: _kIconSize,
-      height: _kIconSize,
+      assetPath,
+      width: _iconSize,
+      height: _iconSize,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
     );

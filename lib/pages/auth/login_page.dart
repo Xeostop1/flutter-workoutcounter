@@ -1,203 +1,217 @@
-// lib/pages/auth/login_page.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../../viewmodels/auth_viewmodel.dart';
 
-class LoginPage extends StatelessWidget {
+enum _LoginType { apple, google }
+
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
-  Future<void> _signInGoogle(BuildContext context) async {
-    final auth = context.read<AuthViewModel>();
-    try {
-      await auth.signInWithGoogle();
-      // 성공 시 라우터 redirect가 자동 처리
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('구글 로그인에 실패했어요: $e')));
-    }
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  _LoginType? _loadingType;
+
+  bool get _isLoading => _loadingType != null;
+
+  Future<void> _signInGoogle() async {
+    await _runLogin(
+      type: _LoginType.google,
+      action: () => context.read<AuthViewModel>().signInWithGoogle(),
+      failTitle: '구글 로그인',
+    );
   }
 
-  Future<void> _signInApple(BuildContext context) async {
-    final auth = context.read<AuthViewModel>();
+  Future<void> _signInApple() async {
+    await _runLogin(
+      type: _LoginType.apple,
+      action: () => context.read<AuthViewModel>().signInWithApple(),
+      failTitle: '애플 로그인',
+    );
+  }
+
+  Future<void> _runLogin({
+    required _LoginType type,
+    required Future<void> Function() action,
+    required String failTitle,
+  }) async {
+    if (_isLoading) return;
+
+    setState(() => _loadingType = type);
     try {
-      await auth.signInWithApple();
+      await action();
       // 성공 시 라우터 redirect가 자동 처리
     } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('애플 로그인에 실패했어요: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$failTitle에 실패했어요. 잠시 후 다시 시도해 주세요.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _loadingType = null);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1C1D20),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 70),
-
-                      // 헤드라인
+                      const SizedBox(height: 78),
                       const Text(
                         '마음 속 작은 불씨를 살려\n건강한 운동습관 만들기',
                         style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w600,
-                          height: 1.4,
-                          color: Colors.white,
-                          letterSpacing: 0.3,
+                          color: Color(0xFFF1F1F1),
+                          fontSize: 47 / 2,
+                          fontWeight: FontWeight.w700,
+                          height: 1.36,
                         ),
                       ),
-                      const SizedBox(height: 12),
-
-                      // 서브 텍스트
-                      Text(
+                      const SizedBox(height: 14),
+                      const Text(
                         '아래 버튼을 눌러 로그인을 진행해주세요',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
-                          letterSpacing: 0.3,
-                          height: 1.4,
+                          color: Color(0xFF898989),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          height: 1.25,
                         ),
                       ),
-
-                      // 남는 공간 밀어내기
                       const Spacer(),
-
-                      // ✅ 마스코트: 버튼 바로 위
                       Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: SizedBox(
-                            height: 120,
-                            child: Stack(
-                              alignment: Alignment.center,
+                        child: Image.asset(
+                          'assets/images/charactor_login.png',
+                          width: 126,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => context.push('/legal/privacy'),
+                          child: RichText(
+                            textAlign: TextAlign.center,
+                            text: const TextSpan(
+                              style: TextStyle(
+                                color: Color(0xFF6E6E6E),
+                                fontSize: 13,
+                                height: 1.45,
+                                fontWeight: FontWeight.w500,
+                              ),
                               children: [
-                                // 은은한 스폿 배경
-                                Container(
-                                  width: 140,
-                                  height: 140,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      center: Alignment(0, 0.2),
-                                      radius: 0.65,
-                                      colors: [
-                                        Color(0x22FFFFFF),
-                                        Color(0x00000000),
-                                      ],
-                                      stops: [0.0, 1.0],
-                                    ),
+                                TextSpan(text: '하단 버튼으로 로그인하면\n'),
+                                TextSpan(
+                                  text: '개인정보처리방침',
+                                  style: TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    decorationThickness: 1.2,
                                   ),
                                 ),
-                                // 크롭 없이 전체 보이게
-                                FittedBox(
-                                  fit: BoxFit.contain,
-                                  child: Image.asset(
-                                    'assets/images/charactor_login.png',
-                                    errorBuilder: (_, __, ___) =>
-                                        const SizedBox.shrink(),
-                                  ),
-                                ),
+                                TextSpan(text: '에 동의하는 것으로 간주합니다.'),
                               ],
                             ),
                           ),
                         ),
                       ),
-
-                      // 약관 안내 (마스코트 아래, 버튼 위)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            '하단 버튼으로 로그인하면\n개인정보처리방침에 동의하는 것으로 간주합니다.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.6),
-                              letterSpacing: 0.3,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: 18),
+                      _loginButton(
+                        onPressed: _isLoading ? null : _signInApple,
+                        backgroundColor: const Color(0xFFEBEBEB),
+                        iconPath: 'assets/icons/icon_apple.png',
+                        label: 'Apple 로그인',
+                        loading: _loadingType == _LoginType.apple,
                       ),
-
-                      // Apple 로그인
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _signInApple(context),
-                          icon: Image.asset(
-                            'assets/icons/icon_apple.png',
-                            width: 22,
-                            height: 22,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox(width: 22, height: 22),
-                          ),
-                          label: const Text(
-                            'Apple 로그인',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
+                      const SizedBox(height: 8),
+                      _loginButton(
+                        onPressed: _isLoading ? null : _signInGoogle,
+                        backgroundColor: const Color(0xFFB9B9BC),
+                        iconPath: 'assets/icons/icon_google.png',
+                        label: 'Google 로그인',
+                        loading: _loadingType == _LoginType.google,
                       ),
-                      const SizedBox(height: 10),
-
-                      // Google 로그인
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _signInGoogle(context),
-                          icon: Image.asset(
-                            'assets/icons/icon_google.png',
-                            width: 22,
-                            height: 22,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox(width: 22, height: 22),
-                          ),
-                          label: const Text(
-                            'Google 로그인',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
                     ],
                   ),
                 ),
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _loginButton({
+    required Future<void> Function()? onPressed,
+    required Color backgroundColor,
+    required String iconPath,
+    required String label,
+    required bool loading,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: onPressed == null
+            ? null
+            : () {
+                onPressed();
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: const Color(0xFF1E1E1E),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          disabledBackgroundColor: backgroundColor.withValues(alpha: 0.82),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (loading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.3,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2A2A2A)),
+                ),
+              )
+            else
+              Image.asset(
+                iconPath,
+                width: 20,
+                height: 20,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    const SizedBox(width: 20, height: 20),
+              ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 18 / 1.2,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
         ),
       ),
     );

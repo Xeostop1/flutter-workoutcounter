@@ -1,148 +1,234 @@
-// lib/widgets/home/routine_list.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../models/routine.dart';
-import '../../viewmodels/routines_viewmodel.dart';
 
-class RoutineList extends StatelessWidget {
+class RoutineList extends StatefulWidget {
   const RoutineList({
     super.key,
     required this.routines,
     required this.onPlay,
+    this.emptyTargetLink,
   });
 
   final List<Routine> routines;
-  final void Function(Routine) onPlay;
+  final ValueChanged<Routine> onPlay;
+  final LayerLink? emptyTargetLink;
+
+  @override
+  State<RoutineList> createState() => _RoutineListState();
+}
+
+class _RoutineListState extends State<RoutineList> {
+  int _page = 0;
+
+  int get _pageCount => (widget.routines.length / 3).ceil();
+
+  @override
+  void didUpdateWidget(covariant RoutineList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_page >= _pageCount) _page = (_pageCount - 1).clamp(0, 1 << 20);
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (routines.isEmpty) {
-      return _emptyCard(
-        context,
-        text: '저장된 루틴이 없어요',
+    if (widget.routines.isEmpty) {
+      Widget addButton = Container(
+        width: 60,
+        height: 60,
+        decoration: const BoxDecoration(
+          color: Color(0xFF303030),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.add, color: Color(0xFF777777), size: 40),
+      );
+      if (widget.emptyTargetLink case final link?) {
+        addButton = CompositedTransformTarget(link: link, child: addButton);
+      }
+
+      return InkWell(
         onTap: () => context.push('/routines'),
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 184),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              addButton,
+              const SizedBox(height: 20),
+              const Text(
+                '루틴이 비어있어요!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF8E8E8E),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '루틴을 등록하고 운동을 시작해보세요.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF666666), fontSize: 14),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
-    // 세로 리스트 + 항목 사이 Divider (홈 스샷 스타일)
-    return ListView.separated(
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      itemCount: routines.length,
-      separatorBuilder: (_, __) => const Divider(
-        height: 24,
-        thickness: 1,
-        color: Color(0x22FFFFFF),
-      ),
-      itemBuilder: (context, i) {
-        final r = routines[i];
-        final summary = r.items.isEmpty
-            ? '운동 없음'
-            : '${r.items.first.name} 외 ${r.items.length - 1}개의 운동';
+    final visibleRows = widget.routines.length >= 3
+        ? 3
+        : widget.routines.length;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final rowHeight =
+        ((textScaler.scale(22) * 1.2).ceilToDouble() +
+                (textScaler.scale(15) * 1.2).ceilToDouble() +
+                25)
+            .clamp(98.0, double.infinity);
+    final listHeight = visibleRows * rowHeight;
 
-        return InkWell(
-          onTap: () => context.push('/routines/${r.id}'),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 제목/요약
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        children: [
+          if (widget.routines.length < 3)
+            const Divider(height: 1, thickness: 1, color: Color(0xFF454545)),
+          SizedBox(
+            height: listHeight,
+            child: PageView.builder(
+              itemCount: _pageCount,
+              onPageChanged: (page) => setState(() => _page = page),
+              itemBuilder: (_, page) {
+                final start = page * 3;
+                final end = (start + 3).clamp(0, widget.routines.length);
+                final routines = widget.routines.sublist(start, end);
+                return Column(
                   children: [
-                    Text(
-                      r.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                    for (var index = 0; index < routines.length; index++)
+                      _RoutineRow(
+                        routine: routines[index],
+                        height: rowHeight,
+                        showDivider: index < routines.length - 1,
+                        onPlay: () => widget.onPlay(routines[index]),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      summary,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFBDBDBD),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ],
+                );
+              },
+            ),
+          ),
+          if (_pageCount > 1) ...[
+            const SizedBox(height: 17),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _pageCount,
+                (index) => Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: index == _page
+                        ? Colors.white
+                        : const Color(0xFF737373),
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-
-              const SizedBox(width: 12),
-
-              // 우측 재생 버튼 (배경 없이 에셋만)
-              _PlayButton(onPressed: () => onPlay(r)),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _emptyCard(BuildContext context,
-      {required String text, VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white12),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
-/// play_icon 이미지(배경/원형 제거)
-class _PlayButton extends StatelessWidget {
-  const _PlayButton({required this.onPressed});
-  final VoidCallback onPressed;
+class _RoutineRow extends StatelessWidget {
+  const _RoutineRow({
+    required this.routine,
+    required this.height,
+    required this.showDivider,
+    required this.onPlay,
+  });
+
+  final Routine routine;
+  final double height;
+  final bool showDivider;
+  final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        splashColor: Colors.white24,
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Center(
-            child: Image.asset(
-              'assets/images/play_icon.png', // 에셋 경로 맞춰주세요
-              width: 22,
-              height: 22,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 24,
+    return SizedBox(
+      height: height,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () => context.push('/routines/edit/${routine.id}'),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          routine.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            height: 1.2,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 9),
+                        Text(
+                          _summary(routine),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF9E9E9E),
+                            fontSize: 15,
+                            height: 1.2,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '${routine.title} 시작',
+                    onPressed: onPlay,
+                    icon: Image.asset(
+                      'assets/images/play_icon.png',
+                      width: 26,
+                      height: 28,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
+          if (showDivider)
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Divider(height: 1, color: Color(0xFF454545)),
+            ),
+        ],
       ),
     );
   }
+}
+
+String _summary(Routine routine) {
+  if (routine.items.isEmpty) return '운동 없음';
+  if (routine.items.length == 1) return routine.items.first.name;
+  return '${routine.items.first.name} 외 ${routine.items.length - 1}개의 운동';
 }

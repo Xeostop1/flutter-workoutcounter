@@ -1,30 +1,36 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:counter_01/main.dart';
+import 'package:counter_01/widgets/free_workout_sheet.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('첫 운동 설정 튜토리얼이 입력 단계에서 시작 단계로 넘어간다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () =>
+                  showFreeWorkoutSheet(context, tutorialMode: true),
+              child: const Text('열기'),
+            ),
+          ),
+        ),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.tap(find.text('열기'));
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    expect(find.text('자유 운동 설정'), findsOneWidget);
+    expect(find.text('내 방식대로\n운동을 입력해요'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '첫 운동');
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('오늘은 간단하게\n1세트만 진행할까요?'), findsOneWidget);
+
+    Navigator.of(tester.element(find.text('자유 운동 설정'))).pop();
+    await tester.pumpAndSettle();
   });
 }

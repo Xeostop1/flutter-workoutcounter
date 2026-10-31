@@ -58,7 +58,7 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = thickness
       ..strokeCap = StrokeCap.round
-      ..color = Colors.white.withOpacity(0.10);
+      ..color = Colors.white.withValues(alpha: 0.10);
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       start,

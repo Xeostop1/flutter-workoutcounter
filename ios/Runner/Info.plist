@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>sparkle</string>
+    <string>SPORKLE</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>counter_01</string>
+    <string>SPORKLE</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -34,16 +34,12 @@
     <key>UISupportedInterfaceOrientations</key>
     <array>
       <string>UIInterfaceOrientationPortrait</string>
-      <string>UIInterfaceOrientationLandscapeLeft</string>
-      <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 
     <key>UISupportedInterfaceOrientations~ipad</key>
     <array>
       <string>UIInterfaceOrientationPortrait</string>
       <string>UIInterfaceOrientationPortraitUpsideDown</string>
-      <string>UIInterfaceOrientationLandscapeLeft</string>
-      <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 
     <key>CFBundleURLTypes</key>
@@ -54,14 +50,14 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <!-- GoogleService-Info.plist 의 REVERSED_CLIENT_ID -->
-          <string>com.googleusercontent.apps.825515648011-9i07fcnh5hrafronsu0mv7lotcvrjsp4</string>
+          <string>com.googleusercontent.apps.295108102036-30gphga54eifug09a8i4pjh212inrgnn</string>
         </array>
       </dict>
     </array>
     <key>LSApplicationQueriesSchemes</key>
     <array>
       <string>google</string>
-      <string>com.googleusercontent.apps.825515648011-9i07fcnh5hrafronsu0mv7lotcvrjsp4</string>
+      <string>com.googleusercontent.apps.295108102036-30gphga54eifug09a8i4pjh212inrgnn</string>
     </array>
 
     <key>CADisableMinimumFrameDurationOnPhone</key>

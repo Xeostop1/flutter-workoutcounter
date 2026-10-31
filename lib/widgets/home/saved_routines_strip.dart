@@ -1,9 +1,10 @@
-// lib/pages/home/sections/saved_routines_strip.dart  ← 새 파일로 두면 깔끔
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../../../models/routine.dart';
-import '../../../viewmodels/routines_viewmodel.dart' as rvm;
+import '../../../viewmodels/routines_viewmodel.dart';
+import '../routine_favorite_action.dart';
 
 class SavedRoutinesStrip extends StatelessWidget {
   const SavedRoutinesStrip({super.key, this.onlyFavorites = false});
@@ -13,10 +14,9 @@ class SavedRoutinesStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<rvm.RoutinesViewModel>();
+    final vm = context.watch<RoutinesViewModel>();
 
-    // 전역 필터 적용된 리스트에서 홈 섹션 정책만 추가로 걸러도 되고
-    // 필요 없으면 그냥 vm.filteredItems 그대로 사용해도 됨.
+    // 홈에서만 즐겨찾기 필터를 한 번 더 적용
     List<Routine> list = vm.filteredItems;
     if (onlyFavorites) {
       list = list.where((r) => r.favorite).toList();
@@ -46,9 +46,12 @@ class SavedRoutinesStrip extends StatelessWidget {
               // 전역 “즐겨찾기만 보기” 토글 버튼(홈에서도 동일하게)
               IconButton(
                 tooltip: vm.favOnly ? '즐겨찾기만 보기 해제' : '즐겨찾기만 보기',
-                icon: Icon(vm.favOnly ? Icons.star_rounded : Icons.star_outline_rounded),
+                icon: Icon(
+                  vm.favOnly ? Icons.star_rounded : Icons.star_outline_rounded,
+                ),
                 color: vm.favOnly ? const Color(0xFFFF6B35) : Colors.white70,
-                onPressed: () => context.read<rvm.RoutinesViewModel>().toggleFavOnly(),
+                onPressed: () =>
+                    context.read<RoutinesViewModel>().toggleFavOnly(),
               ),
             ],
           ),
@@ -70,13 +73,17 @@ class SavedRoutinesStrip extends StatelessWidget {
     );
   }
 
-  Widget _emptyCard(BuildContext context, {required String text, VoidCallback? onAdd}) {
+  Widget _emptyCard(
+    BuildContext context, {
+    required String text,
+    VoidCallback? onAdd,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         height: 120,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white12),
         ),
@@ -86,7 +93,10 @@ class SavedRoutinesStrip extends StatelessWidget {
           child: Center(
             child: Text(
               text,
-              style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
@@ -113,15 +123,7 @@ class _RoutineCard extends StatelessWidget {
         child: Container(
           width: 200,
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            // 뒤 배경에 살짝 그라데이션 느낌 추가하고 싶으면 아래 주석 해제
-            // gradient: const LinearGradient(
-            //   begin: Alignment.topLeft,
-            //   end: Alignment.bottomRight,
-            //   colors: [Color(0xFFFFE1CF), Color(0xFFFFC2B0)],
-            // ),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -145,10 +147,17 @@ class _RoutineCard extends StatelessWidget {
                     constraints: const BoxConstraints(),
                     iconSize: 22,
                     tooltip: routine.favorite ? '즐겨찾기 해제' : '즐겨찾기',
-                    onPressed: () => context.read<rvm.RoutinesViewModel>().toggleFavorite(routine.id),
+                    onPressed: () => saveRoutineFavorite(
+                      context,
+                      () => context.read<RoutinesViewModel>().toggleFavorite(
+                        routine.id,
+                      ),
+                    ),
                     icon: Icon(
                       Icons.star_rounded,
-                      color: routine.favorite ? orange : const Color(0xFFBDBDBD),
+                      color: routine.favorite
+                          ? orange
+                          : const Color(0xFFBDBDBD),
                     ),
                   ),
                 ],
@@ -175,7 +184,9 @@ class _RoutineCard extends StatelessWidget {
                     backgroundColor: orange,
                     minimumSize: const Size(88, 36),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onPressed: () => context.push('/routines/${routine.id}'),
                   child: const Text(
