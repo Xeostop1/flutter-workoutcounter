@@ -44,3 +44,26 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 android/key.properties
+
+# Local credentials, signing files and machine-specific state
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.p8
+*.mobileprovision
+**/service-account*.json
+**/serviceAccount*.json
+**/*firebase-adminsdk*.json
+**/node_modules/
+.firebase/
+**/local.properties
+
+# Local preservation copies (keep on disk, do not sync)
+MAC_HANDOFF/mac-original-sources/
+MAC_HANDOFF/*.zip
+
+# Local emulator logs, diagnostic output, and debug APKs.
+/verification/

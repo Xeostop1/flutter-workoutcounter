@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="SporkleLaunchTheme" parent="@style/LaunchTheme">
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/sporkle_splash_vector</item>
+        <item name="android:windowSplashScreenAnimationDuration">1</item>
+    </style>
+</resources>

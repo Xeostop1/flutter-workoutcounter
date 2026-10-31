@@ -1,30 +1,38 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:counter_01/main.dart';
+import 'package:counter_01/widgets/free_workout_sheet.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('첫 운동 설정은 입력 후에도 시작 버튼을 누르기 전까지 유지된다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () =>
+                  showFreeWorkoutSheet(context, tutorialMode: true),
+              child: const Text('열기'),
+            ),
+          ),
+        ),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.tap(find.text('열기'));
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    expect(find.text('자유 운동 설정'), findsOneWidget);
+    expect(find.text('처음에는 가볍게 1세트부터 시작해보세요.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '첫 운동');
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('시작하기'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(4));
+
+    Navigator.of(tester.element(find.text('자유 운동 설정'))).pop();
+    await tester.pumpAndSettle();
   });
 }

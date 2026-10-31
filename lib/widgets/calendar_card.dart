@@ -50,7 +50,7 @@ class RecordCalendarCard extends StatelessWidget {
           ),
           outsideTextStyle: const TextStyle(color: Colors.white24),
           todayDecoration: BoxDecoration(
-            color: accent.withOpacity(0.12),
+            color: accent.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           selectedDecoration: BoxDecoration(

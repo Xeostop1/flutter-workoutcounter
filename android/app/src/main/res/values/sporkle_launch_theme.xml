@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Own this child theme so flutter_native_splash regeneration keeps our override. -->
+    <style name="SporkleLaunchTheme" parent="@style/LaunchTheme">
+        <item name="android:windowBackground">@drawable/sporkle_launch_background</item>
+    </style>
+</resources>

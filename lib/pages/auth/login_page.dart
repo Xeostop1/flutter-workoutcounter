@@ -1,203 +1,293 @@
-// lib/pages/auth/login_page.dart
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../../viewmodels/auth_viewmodel.dart';
 
-class LoginPage extends StatelessWidget {
+enum _LoginType { apple, google, guest }
+
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
-  Future<void> _signInGoogle(BuildContext context) async {
-    final auth = context.read<AuthViewModel>();
-    try {
-      await auth.signInWithGoogle();
-      // 성공 시 라우터 redirect가 자동 처리
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('구글 로그인에 실패했어요: $e')));
-    }
-  }
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
 
-  Future<void> _signInApple(BuildContext context) async {
-    final auth = context.read<AuthViewModel>();
+class _LoginPageState extends State<LoginPage> {
+  _LoginType? _loadingType;
+  bool get _isLoading => _loadingType != null;
+
+  Future<void> _startGuest() => _runLogin(
+    type: _LoginType.guest,
+    action: () async {
+      final auth = context.read<AuthViewModel>();
+      await auth.continueAsGuest();
+      if (mounted) context.go(auth.onboardingDone ? '/home' : '/onboarding');
+    },
+    failTitle: '게스트 시작',
+  );
+
+  Future<void> _signInGoogle() => _runLogin(
+    type: _LoginType.google,
+    action: () => context.read<AuthViewModel>().signInWithGoogle(),
+    failTitle: '구글 로그인',
+  );
+
+  Future<void> _signInApple() => _runLogin(
+    type: _LoginType.apple,
+    action: () => context.read<AuthViewModel>().signInWithApple(),
+    failTitle: '애플 로그인',
+  );
+
+  Future<void> _runLogin({
+    required _LoginType type,
+    required Future<void> Function() action,
+    required String failTitle,
+  }) async {
+    if (_isLoading) return;
+
+    setState(() => _loadingType = type);
     try {
-      await auth.signInWithApple();
+      await action();
       // 성공 시 라우터 redirect가 자동 처리
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
+      var message = '$failTitle에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      if (type == _LoginType.apple && e is FirebaseAuthException) {
+        message = switch (e.code) {
+          'operation-not-allowed' ||
+          'invalid-oauth-client-id' ||
+          'invalid-oauth-response' => 'Apple 로그인 설정을 확인해야 해요. 운영자에게 문의해주세요.',
+          'account-exists-with-different-credential' =>
+            '다른 로그인 방식으로 가입된 계정이에요. 기존 로그인 방법을 사용해주세요.',
+          'network-request-failed' => '네트워크 연결을 확인한 뒤 Apple 로그인을 다시 시도해주세요.',
+          _ => message,
+        };
+      }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('애플 로그인에 실패했어요: $e')));
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) {
+        setState(() => _loadingType = null);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF101114),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final compact = constraints.maxHeight < 700;
+            // Reserve the copy and sign-in controls before enlarging the approved artwork.
+            final artworkWidth = math.min(
+              constraints.maxWidth - 32,
+              ((constraints.maxHeight - (compact ? 364 : 426)) * 6 / 5)
+                  .clamp(144.0, 360.0)
+                  .toDouble(),
+            );
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 70),
-
-                      // 헤드라인
+                      SizedBox(height: compact ? 16 : 60),
                       const Text(
-                        '마음 속 작은 불씨를 살려\n건강한 운동습관 만들기',
+                        '마음 속 작은 불씨를 살려',
                         style: TextStyle(
-                          fontSize: 21,
+                          color: Color(0xFFF1F1F1),
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          height: 1.4,
-                          color: Colors.white,
-                          letterSpacing: 0.3,
+                          height: 1.35,
                         ),
                       ),
-                      const SizedBox(height: 12),
-
-                      // 서브 텍스트
+                      const SizedBox(height: 4),
                       Text(
-                        '아래 버튼을 눌러 로그인을 진행해주세요',
+                        '건강한 운동습관 만들기',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
-                          letterSpacing: 0.3,
-                          height: 1.4,
+                          color: const Color(0xFFF1F1F1),
+                          fontSize: compact ? 26 : 28,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                          letterSpacing: -0.5,
                         ),
                       ),
-
-                      // 남는 공간 밀어내기
+                      SizedBox(height: compact ? 8 : 14),
+                      const Text(
+                        '로그인 없이 시작하거나 계정으로 로그인해주세요',
+                        style: TextStyle(
+                          color: Color(0xFF898989),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          height: 1.35,
+                        ),
+                      ),
                       const Spacer(),
-
-                      // ✅ 마스코트: 버튼 바로 위
                       Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: SizedBox(
-                            height: 120,
-                            child: Stack(
-                              alignment: Alignment.center,
+                        child: RepaintBoundary(
+                          child: Image.asset(
+                            MediaQuery.disableAnimationsOf(context)
+                                ? 'assets/images/login_flame_still.png'
+                                : 'assets/images/login_flame_approved.webp',
+                            key: const ValueKey('login-flame'),
+                            width: artworkWidth,
+                            height: artworkWidth * 5 / 6,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.medium,
+                            excludeFromSemantics: true,
+                            gaplessPlayback: true,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: compact ? 10 : 18),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => context.push('/legal/privacy'),
+                          child: RichText(
+                            textAlign: TextAlign.center,
+                            text: const TextSpan(
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Color(0xFF6E6E6E),
+                                fontSize: 13,
+                                height: 1.45,
+                                fontWeight: FontWeight.w500,
+                              ),
                               children: [
-                                // 은은한 스폿 배경
-                                Container(
-                                  width: 140,
-                                  height: 140,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      center: Alignment(0, 0.2),
-                                      radius: 0.65,
-                                      colors: [
-                                        Color(0x22FFFFFF),
-                                        Color(0x00000000),
-                                      ],
-                                      stops: [0.0, 1.0],
-                                    ),
+                                TextSpan(text: '하단 버튼으로 로그인하면\n'),
+                                TextSpan(
+                                  text: '개인정보처리방침',
+                                  style: TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    decorationThickness: 1.2,
                                   ),
                                 ),
-                                // 크롭 없이 전체 보이게
-                                FittedBox(
-                                  fit: BoxFit.contain,
-                                  child: Image.asset(
-                                    'assets/images/charactor_login.png',
-                                    errorBuilder: (_, __, ___) =>
-                                        const SizedBox.shrink(),
-                                  ),
-                                ),
+                                TextSpan(text: '에 동의하는 것으로 간주합니다.'),
                               ],
                             ),
                           ),
                         ),
                       ),
-
-                      // 약관 안내 (마스코트 아래, 버튼 위)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                      SizedBox(height: compact ? 10 : 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _isLoading ? null : _startGuest,
                           child: Text(
-                            '하단 버튼으로 로그인하면\n개인정보처리방침에 동의하는 것으로 간주합니다.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.6),
-                              letterSpacing: 0.3,
-                              height: 1.4,
-                            ),
+                            _loadingType == _LoginType.guest
+                                ? '기기 저장소를 여는 중…'
+                                : '로그인 없이 시작하기',
                           ),
                         ),
                       ),
-
-                      // Apple 로그인
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _signInApple(context),
-                          icon: Image.asset(
-                            'assets/icons/icon_apple.png',
-                            width: 22,
-                            height: 22,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox(width: 22, height: 22),
-                          ),
-                          label: const Text(
-                            'Apple 로그인',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
+                      const SizedBox(height: 6),
+                      const Center(
+                        child: Text(
+                          '게스트 기록은 이 기기에 저장돼요. 앱 삭제 시 사라질 수 있어요.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF9B9EA8),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-
-                      // Google 로그인
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _signInGoogle(context),
-                          icon: Image.asset(
-                            'assets/icons/icon_google.png',
-                            width: 22,
-                            height: 22,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox(width: 22, height: 22),
-                          ),
-                          label: const Text(
-                            'Google 로그인',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
+                      const SizedBox(height: 8),
+                      _loginButton(
+                        onPressed: _isLoading ? null : _signInGoogle,
+                        backgroundColor: const Color(0xFFB9B9BC),
+                        iconPath: 'assets/icons/icon_google.png',
+                        label: 'Google 로그인',
+                        loading: _loadingType == _LoginType.google,
                       ),
-
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 8),
+                      _loginButton(
+                        onPressed: _isLoading ? null : _signInApple,
+                        backgroundColor: const Color(0xFFEBEBEB),
+                        iconPath: 'assets/icons/icon_apple.png',
+                        label: 'Apple 로그인',
+                        loading: _loadingType == _LoginType.apple,
+                      ),
+                      SizedBox(height: compact ? 12 : 28),
                     ],
                   ),
                 ),
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _loginButton({
+    required Future<void> Function()? onPressed,
+    required Color backgroundColor,
+    required String iconPath,
+    required String label,
+    required bool loading,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed == null
+            ? null
+            : () {
+                onPressed();
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: const Color(0xFF101114),
+          minimumSize: const Size(0, 52),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          disabledBackgroundColor: backgroundColor.withValues(alpha: 0.82),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (loading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.3,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2A2A2A)),
+                ),
+              )
+            else
+              Image.asset(
+                iconPath,
+                width: 20,
+                height: 20,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    const SizedBox(width: 20, height: 20),
+              ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18 / 1.2,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

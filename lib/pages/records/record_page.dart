@@ -2,11 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/records_viewmodel.dart';
-import '../../viewmodels/routines_viewmodel.dart';
 
-import 'sections/user_header_section.dart';
 import 'sections/calendar_section.dart';
 import 'sections/daily_records_section.dart';
 
@@ -15,29 +12,60 @@ class RecordsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 존재 보장
-    context.watch<AuthViewModel>();
-    context.watch<RecordsViewModel>();
-    context.watch<RoutinesViewModel>();
+    final records = context.watch<RecordsViewModel>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('기록'), centerTitle: true),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              UserHeaderSection(),
-              SizedBox(height: 16),
-              CalendarSection(),
-              SizedBox(height: 16),
-              // ↓ 리스트도 부모 스크롤에 종속
-              DailyRecordsSection(embed: true),
-            ],
-          ),
+      appBar: AppBar(
+        title: const Text('운동 기록'),
+        centerTitle: false,
+        toolbarHeight: 48,
+        titleTextStyle: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'Pretendard',
         ),
+      ),
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: records.loadError != null
+            ? _LoadError(onRetry: records.reload)
+            : records.isLoading && records.records.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.sizeOf(context).width < 340 ? 6 : 12,
+                  vertical: 8,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const CalendarSection(),
+                    const SizedBox(height: 8),
+                    const DailyRecordsSection(embed: true),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _LoadError extends StatelessWidget {
+  const _LoadError({required this.onRetry});
+
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('운동 기록을 불러오지 못했어요.'),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
+        ],
       ),
     );
   }

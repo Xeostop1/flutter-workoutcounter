@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 어디서든 호출:
-/// final result = await showAppSheet<T>(context, title: '제목', child: ...);
+/// `final result = await showAppSheet<T>(context, child: ...)`
 Future<T?> showAppSheet<T>(
   BuildContext context, {
   String? title,
@@ -13,12 +13,12 @@ Future<T?> showAppSheet<T>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withOpacity(0.5),
+    barrierColor: Colors.black.withValues(alpha: 0.5),
     isDismissible: isDismissible,
     builder: (_) => _AppSheetScaffold(
       title: title,
-      child: child,
       primaryButton: primaryButton,
+      child: child,
     ),
   );
 }
@@ -41,44 +41,46 @@ class _AppSheetScaffold extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         child: Material(
-          color: const Color(0xFF4B4B4B),
+          color: const Color(0xFF1C1E23),
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // drag handle
-                  Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  if (title != null) ...[
-                    Text(
-                      title!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF555862),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 22),
+                    if (title != null) ...[
+                      Text(
+                        title!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 19,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    child,
+                    if (primaryButton != null) ...[
+                      const SizedBox(height: 18),
+                      primaryButton!,
+                    ],
                   ],
-                  // slot
-                  child,
-                  if (primaryButton != null) ...[
-                    const SizedBox(height: 18),
-                    primaryButton!,
-                  ],
-                ],
+                ),
               ),
             ),
           ),

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No visible motion, no startup delay; use AnimatedVectorDrawable's full-size renderer. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:propertyName="rotation" android:valueFrom="0" android:valueTo="0"
+    android:valueType="floatType" android:duration="1" />

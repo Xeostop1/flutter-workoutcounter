@@ -4,18 +4,19 @@ class Routine {
   /// “루틴 없이 운동하기” 등에 쓰는 가상의 카테고리
   static const String freeCategoryId = 'FREE';
 
-  final String id;              // UUID (doc id)
+  final String id; // UUID (doc id)
   final String title;
-  final String categoryId;      // 카테고리 UUID (FK) — 자유운동은 FREE 사용
+  final String categoryId; // 카테고리 UUID (FK) — 자유운동은 FREE 사용
   final List<Exercise> items;
 
   // --- 확장 메타 ---
-  final String? ownerUid;       // 로그인 사용자 uid
-  final bool favorite;          // 즐겨찾기
-  final bool archived;          // 숨김/보관
-  final bool isDraft;           // 편집 중 임시 루틴 여부
-  final DateTime? createdAt;    // 생성 시각
-  final DateTime? updatedAt;    // 수정 시각
+  final String? ownerUid; // 로그인 사용자 uid
+  final bool favorite; // 즐겨찾기
+  final bool archived; // 숨김/보관
+  final bool isDraft; // 편집 중 임시 루틴 여부
+  final DateTime? createdAt; // 생성 시각
+  final DateTime? updatedAt; // 수정 시각
+  final bool ttsEnabled;
 
   const Routine({
     required this.id,
@@ -28,18 +29,19 @@ class Routine {
     this.isDraft = false,
     this.createdAt,
     this.updatedAt,
+    this.ttsEnabled = true,
   });
 
   /// 대표 운동(없으면 기본값)
   Exercise get primary => items.isNotEmpty
       ? items.first
       : const Exercise(
-    id: 'EMPTY',
-    name: '운동',
-    sets: 2,
-    reps: 10,
-    repSeconds: 2,
-  );
+          id: 'EMPTY',
+          name: '운동',
+          sets: 2,
+          reps: 10,
+          repSeconds: 2,
+        );
 
   Routine copyWith({
     String? id,
@@ -52,6 +54,7 @@ class Routine {
     bool? isDraft,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? ttsEnabled,
   }) {
     return Routine(
       id: id ?? this.id,
@@ -64,6 +67,7 @@ class Routine {
       isDraft: isDraft ?? this.isDraft,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      ttsEnabled: ttsEnabled ?? this.ttsEnabled,
     );
   }
 
@@ -77,6 +81,7 @@ class Routine {
     'favorite': favorite,
     'archived': archived,
     'isDraft': isDraft,
+    'ttsEnabled': ttsEnabled,
     // 날짜는 ISO로 저장(서버/클라 모두 안전), epoch를 쓰고 싶으면 msSinceEpoch로 바꿔도 OK
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
@@ -93,6 +98,7 @@ class Routine {
     favorite: (m['favorite'] as bool?) ?? false,
     archived: (m['archived'] as bool?) ?? false,
     isDraft: (m['isDraft'] as bool?) ?? false,
+    ttsEnabled: (m['ttsEnabled'] as bool?) ?? true,
     createdAt: _parseDate(m['createdAt']),
     updatedAt: _parseDate(m['updatedAt']),
   );

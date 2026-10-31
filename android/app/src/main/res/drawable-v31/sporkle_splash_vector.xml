@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep the vector live instead of Android's low-resolution static splash cache. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/sporkle_wordmark">
+    <target android:name="wordmark" android:animation="@animator/sporkle_logo_still" />
+</animated-vector>

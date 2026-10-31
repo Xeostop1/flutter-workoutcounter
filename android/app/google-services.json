@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "295108102036",
+    "project_id": "sparkle-fe639",
+    "storage_bucket": "sparkle-fe639.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:295108102036:android:0212ab5ecee67a12fc7181",
+        "android_client_info": {
+          "package_name": "com.sparkleteamhns.counter01"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "295108102036-i3givrlq4ah19kpg5lvt8m4uhp3u537v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sparkleteamhns.counter01",
+            "certificate_hash": "4890e280fe8a8f851e6243f76aa07c2a423d04aa"
+          }
+        },
+        {
+          "client_id": "295108102036-uubmr84bp3dbniu2to0evna8gm7dc15h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sparkleteamhns.counter01",
+            "certificate_hash": "d68d595c2f8f728afcfd419f8742d7d288ccee08"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6lD4QQ8eoW1swhQSlBWQ9k9Z6J1MNJ4w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "295108102036-h6tinf3bnl8o0apn9r7d31u8cehdvbnk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sparkleteamhns.counter01"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -22,16 +22,14 @@ class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.0),
-            child: Image(
-              image: AssetImage('assets/images/splash_landing.jpg'), // SPORKLE 로고 이미지
-              fit: BoxFit.contain,
-            ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF101114),
+      body: Center(
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.72,
+          child: const Image(
+            image: AssetImage('assets/images/logo_sporkle.png'),
+            fit: BoxFit.contain,
           ),
         ),
       ),

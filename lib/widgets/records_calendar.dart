@@ -37,7 +37,7 @@ class _RecordsCalendarState extends State<RecordsCalendar> {
     final gridStart = firstOfMonth.subtract(Duration(days: startOffset));
     final days = List<DateTime>.generate(
       42,
-          (i) => DateTime(gridStart.year, gridStart.month, gridStart.day + i),
+      (i) => DateTime(gridStart.year, gridStart.month, gridStart.day + i),
     );
 
     return Column(
@@ -72,8 +72,11 @@ class _RecordsCalendarState extends State<RecordsCalendar> {
                 });
               },
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                backgroundColor: Colors.white.withOpacity(0.08),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                backgroundColor: Colors.white.withValues(alpha: 0.08),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -94,7 +97,7 @@ class _RecordsCalendarState extends State<RecordsCalendar> {
         ),
 
         const SizedBox(height: 4),
-        Divider(color: Colors.white.withOpacity(0.12), height: 1),
+        Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
         const SizedBox(height: 8),
 
         // ===== 요일 헤더 =====
@@ -103,8 +106,13 @@ class _RecordsCalendarState extends State<RecordsCalendar> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              _Weekday('일'), _Weekday('월'), _Weekday('화'), _Weekday('수'),
-              _Weekday('목'), _Weekday('금'), _Weekday('토'),
+              _Weekday('일'),
+              _Weekday('월'),
+              _Weekday('화'),
+              _Weekday('수'),
+              _Weekday('목'),
+              _Weekday('금'),
+              _Weekday('토'),
             ],
           ),
         ),
@@ -171,7 +179,7 @@ class _Weekday extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
           ),
         ),
       ),
@@ -184,7 +192,7 @@ class _DayCell extends StatelessWidget {
   final bool isOutside;
   final bool isToday;
   final bool didWorkout; // 오렌지 원
-  final bool fullyDone;  // 빨간 도장
+  final bool fullyDone; // 빨간 도장
   final VoidCallback onTap;
   final ColorScheme colorScheme;
 
@@ -200,14 +208,14 @@ class _DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final orange = const Color(0xFFFF6B35);
+    final orange = const Color(0xFFFF784F);
 
     final textColor = isOutside
-        ? Colors.white.withOpacity(0.35)
-        : (didWorkout ? Colors.white : Colors.white.withOpacity(0.9));
+        ? Colors.white.withValues(alpha: 0.35)
+        : (didWorkout ? Colors.white : Colors.white.withValues(alpha: 0.9));
 
     final border = isToday
-        ? Border.all(color: Colors.white.withOpacity(0.7), width: 1.2)
+        ? Border.all(color: Colors.white.withValues(alpha: 0.7), width: 1.2)
         : null;
 
     return GestureDetector(
@@ -224,7 +232,9 @@ class _DayCell extends StatelessWidget {
               decoration: BoxDecoration(
                 color: didWorkout ? orange : Colors.transparent,
                 shape: BoxShape.circle,
-                border: border == null ? null : Border.fromBorderSide(border.top),
+                border: border == null
+                    ? null
+                    : Border.fromBorderSide(border.top),
               ),
               child: Text(
                 '${day.day}',

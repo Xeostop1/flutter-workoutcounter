@@ -1,5 +1,8 @@
+// lib/models/user_profile.dart
+
+/// 앱의 계정/개인 설정을 모두 품는 사용자 프로필 모델.
+/// (원격 DB/로컬 스토리지 양쪽 동기화 대상)
 class UserProfile {
-  /// 인증 계정의 고유 ID (Firebase UID 등)
   final String uid;
 
   /// 표시 이름 / 이메일 / 아바타
@@ -7,11 +10,25 @@ class UserProfile {
   final String? email;
   final String? photoUrl;
 
-  /// 온보딩 완료 여부(앱 정책에 따라 로컬/원격에서 동기화 가능)
+  /// 온보딩 완료 여부
   final bool onboardingDone;
 
   /// 주간 목표(옵션)
   final int? weeklyTarget;
+  final bool homeTutorialDone;
+
+  // =========================
+  // 🔊 보이스 카운팅(TTS) 설정
+  // =========================
+
+  /// TTS 카운팅 사용 여부
+  final bool voiceCountingEnabled;
+
+  /// TTS 피치(저음~고음). FlutterTTS 권장 범위: 0.5 ~ 2.0
+  final double voicePitch;
+  final String? trainerVoiceId;
+  final String? systemVoiceId;
+  final int restSeconds;
 
   const UserProfile({
     required this.uid,
@@ -20,6 +37,12 @@ class UserProfile {
     this.photoUrl,
     this.onboardingDone = false,
     this.weeklyTarget,
+    this.homeTutorialDone = false,
+    this.voiceCountingEnabled = false,
+    this.voicePitch = 1.0,
+    this.trainerVoiceId,
+    this.systemVoiceId,
+    this.restSeconds = 3,
   });
 
   UserProfile copyWith({
@@ -29,6 +52,12 @@ class UserProfile {
     String? photoUrl,
     bool? onboardingDone,
     int? weeklyTarget,
+    bool? homeTutorialDone,
+    bool? voiceCountingEnabled,
+    double? voicePitch,
+    String? trainerVoiceId,
+    String? systemVoiceId,
+    int? restSeconds,
   }) {
     return UserProfile(
       uid: uid ?? this.uid,
@@ -37,12 +66,42 @@ class UserProfile {
       photoUrl: photoUrl ?? this.photoUrl,
       onboardingDone: onboardingDone ?? this.onboardingDone,
       weeklyTarget: weeklyTarget ?? this.weeklyTarget,
+      homeTutorialDone: homeTutorialDone ?? this.homeTutorialDone,
+      voiceCountingEnabled: voiceCountingEnabled ?? this.voiceCountingEnabled,
+      voicePitch: voicePitch ?? this.voicePitch,
+      trainerVoiceId: trainerVoiceId ?? this.trainerVoiceId,
+      systemVoiceId: systemVoiceId ?? this.systemVoiceId,
+      restSeconds: restSeconds ?? this.restSeconds,
     );
   }
 
-  /// 로그아웃 상태 표현용
-  static const empty = UserProfile(uid: '');
+  Map<String, dynamic> toJson() => {
+    'uid': uid,
+    'name': name,
+    'email': email,
+    'photoUrl': photoUrl,
+    'onboardingDone': onboardingDone,
+    'weeklyTarget': weeklyTarget,
+    'homeTutorialDone': homeTutorialDone,
+    'voiceCountingEnabled': voiceCountingEnabled,
+    'voicePitch': voicePitch,
+    'trainerVoiceId': trainerVoiceId,
+    'systemVoiceId': systemVoiceId,
+    'restSeconds': restSeconds,
+  };
 
-  bool get isEmpty => uid.isEmpty;
-  bool get isNotEmpty => uid.isNotEmpty;
+  factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
+    uid: json['uid'] as String,
+    name: json['name'] as String?,
+    email: json['email'] as String?,
+    photoUrl: json['photoUrl'] as String?,
+    onboardingDone: (json['onboardingDone'] as bool?) ?? false,
+    weeklyTarget: json['weeklyTarget'] as int?,
+    homeTutorialDone: (json['homeTutorialDone'] as bool?) ?? false,
+    voiceCountingEnabled: (json['voiceCountingEnabled'] as bool?) ?? false,
+    voicePitch: (json['voicePitch'] as num?)?.toDouble() ?? 1.0,
+    trainerVoiceId: json['trainerVoiceId'] as String?,
+    systemVoiceId: json['systemVoiceId'] as String?,
+    restSeconds: (json['restSeconds'] as num?)?.toInt() ?? 3,
+  );
 }

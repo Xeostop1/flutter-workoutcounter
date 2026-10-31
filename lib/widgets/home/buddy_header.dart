@@ -1,139 +1,170 @@
 import 'package:flutter/material.dart';
+import '../flame_avatar.dart';
 
 class BuddyHeader extends StatelessWidget {
-  final int day;
-  final String nickname;
-  final String message;
-  final VoidCallback onTap;
-
   const BuddyHeader({
     super.key,
     required this.day,
+    required this.flameStage,
     required this.nickname,
     required this.message,
     required this.onTap,
+    this.compact = false,
   });
+  final int day;
+  final int flameStage;
+  final String nickname;
+  final String message;
+  final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        GestureDetector(
+    final diameter = compact ? 90.0 : 110.0;
+    return Semantics(
+      button: true,
+      label: '$nickname님의 불씨 보기',
+      hint: '눌러서 성장과 이번 주 목표 보기',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           onTap: onTap,
-          child: SizedBox(
-            width: 84,
-            height: 84,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 84,
-                  height: 84,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF5D5D5D),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Image.asset(
-                  'assets/images/charactor_first.png',
-                  width: 42,
-                  fit: BoxFit.contain,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          borderRadius: BorderRadius.circular(12),
+          child: Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _DayPill(day: day),
-                  const SizedBox(width: 8),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: nickname,
-                          style: const TextStyle(
-                            fontSize: 20, // 닉네임은 더 큼
-                            fontWeight: FontWeight.w800, // 더 굵게
-                            color: Colors.white,
+              SizedBox(
+                width: diameter,
+                height: diameter + 14,
+                child: Stack(
+                  children: [
+                    _avatar(diameter),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          constraints: BoxConstraints(maxWidth: diameter),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF595959),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Day $day',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
-                        const TextSpan(
-                          text: '님의 불씨',
-                          style: TextStyle(
-                            fontSize: 13, // 뒤 문구는 더 작게
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: Text(
+                        '$nickname님의 불씨',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ClipPath(
+                          clipper: _SpeechTail(),
+                          child: const SizedBox(
+                            width: 10,
+                            height: 14,
+                            child: ColoredBox(color: Colors.white),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              message.split('\n').first,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.35,
+                                color: Color(0xFF626262),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 10, top: 4),
+                      child: Text(
+                        '성장·목표 보기 ›',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFFB8BBC4),
+                        ),
+                      ),
                     ),
                   ],
-                ),
-                child: Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF5D5D5D),
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
-}
 
-class _DayPill extends StatelessWidget {
-  final int day;
-  const _DayPill({required this.day});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF5E5E5E),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        'Day $day',
-        style: const TextStyle(
-          fontSize: 12,
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
+  Widget _avatar(double diameter) {
+    return SizedBox.square(
+      key: const ValueKey('home-flame-avatar'),
+      dimension: diameter,
+      child: OverflowBox(
+        maxWidth: diameter * 1.25,
+        maxHeight: diameter * 1.25,
+        child: FlameAvatar(
+          key: flameStage == 0 ? const ValueKey('home-first-day-ember') : null,
+          stage: flameStage,
+          size: diameter * 1.25,
+          characterScale: flameStage <= 0 ? 1.12 : 1,
         ),
       ),
     );
   }
+}
+
+class _SpeechTail extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) => Path()
+    ..moveTo(size.width, 0)
+    ..lineTo(0, size.height / 2)
+    ..lineTo(size.width, size.height)
+    ..close();
+
+  @override
+  bool shouldReclip(_SpeechTail oldClipper) => false;
 }

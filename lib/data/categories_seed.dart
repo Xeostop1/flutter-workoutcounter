@@ -16,7 +16,7 @@ final List<Routine> _lowerRoutines = [
     categoryId: _lowerCatId,
     items: [
       Exercise(id: _u.v4(), name: '핵스쿼트', reps: 20, sets: 3, repSeconds: 2),
-      Exercise(id: _u.v4(), name: '런지',     reps: 20, sets: 3, repSeconds: 2),
+      Exercise(id: _u.v4(), name: '런지', reps: 20, sets: 3, repSeconds: 2),
     ],
   ),
   Routine(
@@ -24,7 +24,7 @@ final List<Routine> _lowerRoutines = [
     title: '스쿼트',
     categoryId: _lowerCatId,
     items: [
-      Exercise(id: _u.v4(), name: '스쿼트',   reps: 25, sets: 3, repSeconds: 2),
+      Exercise(id: _u.v4(), name: '스쿼트', reps: 25, sets: 3, repSeconds: 2),
       Exercise(id: _u.v4(), name: '카프레이즈', reps: 30, sets: 3, repSeconds: 2),
     ],
   ),
@@ -40,7 +40,7 @@ final List<Routine> _lowerRoutines = [
 
 // 카테고리(이제 code 없음)
 final lowerCategory = RoutineCategory(
-  id: _lowerCatId,  // ✅ UUID
+  id: _lowerCatId, // ✅ UUID
   name: '하체',
   routines: _lowerRoutines,
 );
@@ -48,16 +48,15 @@ final lowerCategory = RoutineCategory(
 // 최종 시드
 final categoriesSeed = [lowerCategory];
 
-
 Routine makeDefaultRoutine() {
   return Routine(
     id: _u.v4(),
-    title: '기본운동',      // ← 화면 타이틀
+    title: '기본운동', // ← 화면 타이틀
     categoryId: _lowerCatId, // ← 기존 하체 카테고리 id를 사용 (요청사항 그대로)
     items: [
       Exercise(
         id: _u.v4(),
-        name: '기본운동',   // ← 하위 운동 이름
+        name: '기본운동', // ← 하위 운동 이름
         reps: 10,
         sets: 2,
         repSeconds: 2,

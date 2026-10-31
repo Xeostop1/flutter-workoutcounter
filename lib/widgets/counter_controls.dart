@@ -21,12 +21,20 @@ class CounterControls extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        IconButton(iconSize: 36, onPressed: onReset, icon: const Icon(Icons.refresh)),
+        IconButton(
+          iconSize: 36,
+          onPressed: onReset,
+          icon: const Icon(Icons.refresh),
+        ),
         FloatingActionButton(
           onPressed: isResting ? null : onStartPause,
           child: Icon(isRunning ? Icons.pause : Icons.play_arrow),
         ),
-        IconButton(iconSize: 36, onPressed: onStop, icon: const Icon(Icons.stop)),
+        IconButton(
+          iconSize: 36,
+          onPressed: onStop,
+          icon: const Icon(Icons.stop),
+        ),
       ],
     );
   }

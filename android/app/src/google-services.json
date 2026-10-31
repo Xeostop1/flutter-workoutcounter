@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "295108102036",
+    "project_id": "sparkle-fe639",
+    "storage_bucket": "sparkle-fe639.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:295108102036:android:0212ab5ecee67a12fc7181",
+        "android_client_info": {
+          "package_name": "com.sparkleteamhns.counter01"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6lD4QQ8eoW1swhQSlBWQ9k9Z6J1MNJ4w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

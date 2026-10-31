@@ -1,30 +1,30 @@
-// lib/widgets/gradient_circular_counter.dart
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 class GradientCircularCounter extends StatelessWidget {
   const GradientCircularCounter({
     super.key,
     required this.progress,
-    this.setNumber = 1,            // ← 기본값
-    this.reps = 10,                // ← 기본값
+    this.setNumber = 1,
+    this.reps = 10,
     this.size = 240,
-    this.thickness = 22,
+    this.thickness = 23,
+    this.center,
     this.startAngle = -math.pi / 2,
     this.dim = false,
-    this.trackColor = const Color(0xFFF3AE94),
+    this.trackColor = const Color(0xFF30333A),
     this.dimColor = const Color(0xFFBDBDBD),
-    this.gradient1 = const Color(0xFFFFDEA9),
-    this.gradient2 = const Color(0xFFFF6E38),
-    this.gradient3 = const Color(0xFFEF7F4C),
-    this.bgColor,                  // ← 호환용 alias (trackColor 대체)
-    this.setLabel = 'Set',
-    this.repsLabel = '회',
+    this.gradient1 = const Color(0xFFFFE3B8),
+    this.gradient2 = const Color(0xFFFFB783),
+    this.gradient3 = const Color(0xFFFF784F),
+    this.bgColor,
+    this.setLabel = '\uC138\uD2B8',
+    this.repsLabel = '\uD68C',
   });
 
+  final Widget? center;
   final double progress;
-
-  // 선택 파라미터 + 기본값
   final int setNumber;
   final int reps;
 
@@ -39,7 +39,7 @@ class GradientCircularCounter extends StatelessWidget {
   final Color gradient2;
   final Color gradient3;
 
-  // old API alias
+  // 吏㏃? 二쇱꽍: 湲곗〈 ?몄텧 肄붾뱶 ?명솚??alias
   final Color? bgColor;
 
   final String setLabel;
@@ -47,83 +47,85 @@ class GradientCircularCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clamped = progress.clamp(0.0, 1.0);
+    final clamped = progress.clamp(0.0, 1.0).toDouble();
 
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: Size.square(size),
-            painter: _RingPainter(
-              progress: clamped,
-              thickness: thickness,
-              startAngle: startAngle,
-              dim: dim,
-              trackColor: bgColor ?? trackColor, // alias 적용
-              dimColor: dimColor,
-              gradient1: gradient1,
-              gradient2: gradient2,
-              gradient3: gradient3,
-            ),
-          ),
-          Container(
-            width: size - thickness * 1.6,
-            height: size - thickness * 1.6,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: clamped),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      builder: (context, animatedProgress, _) {
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
             alignment: Alignment.center,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    text: '$setNumber',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: '  $setLabel',
-                        style: TextStyle(
-                          color: Colors.black.withOpacity(0.7),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
+            children: [
+              CustomPaint(
+                size: Size.square(size),
+                painter: _RingPainter(
+                  progress: animatedProgress,
+                  thickness: thickness,
+                  startAngle: startAngle,
+                  dim: dim,
+                  trackColor: bgColor ?? trackColor,
+                  dimColor: dimColor,
+                  gradient1: gradient1,
+                  gradient2: gradient2,
+                  gradient3: gradient3,
                 ),
-                const SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
-                    text: '$reps',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      height: 1.0,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: '  $repsLabel',
-                        style: TextStyle(
-                          color: Colors.black.withOpacity(0.7),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              Container(
+                width: size - thickness * 2,
+                height: size - thickness * 2,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1C1E23),
+                  shape: BoxShape.circle,
                 ),
-              ],
+                alignment: Alignment.center,
+                child:
+                    center ??
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _CounterLine(value: setNumber, label: setLabel),
+                        const SizedBox(height: 9),
+                        _CounterLine(value: reps, label: repsLabel),
+                      ],
+                    ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CounterLine extends StatelessWidget {
+  const _CounterLine({required this.value, required this.label});
+
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        text: '$value',
+        style: const TextStyle(
+          color: Color(0xFFF4F4F6),
+          fontSize: 40,
+          fontWeight: FontWeight.w600,
+          height: 1.0,
+          letterSpacing: -0.8,
+        ),
+        children: [
+          TextSpan(
+            text: ' $label',
+            style: const TextStyle(
+              color: Color(0xFF9B9EA8),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -162,53 +164,51 @@ class _RingPainter extends CustomPainter {
     final radius = (math.min(size.width, size.height) - thickness) / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
-    // 배경 트랙
     final trackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = thickness
       ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true
       ..color = dim ? dimColor : trackColor;
     canvas.drawArc(rect, 0, math.pi * 2, false, trackPaint);
 
     if (dim) return;
 
+    if (progress <= 0) return;
     final sweep = (math.pi * 2) * progress;
-    if (sweep <= 0) return;
 
-    // 3색 그라데이션
     final shader = SweepGradient(
-      startAngle: startAngle,
-      endAngle: startAngle + math.pi * 2,
-      colors: [gradient1, gradient2, gradient3, gradient1],
-      stops: const [0.0, 0.45, 0.8, 1.0],
+      transform: GradientRotation(startAngle),
+      colors: [gradient1, gradient2, gradient3],
+      stops: const [0.0, 0.55, 1.0],
     ).createShader(rect);
 
     final arcPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = thickness
       ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true
       ..shader = shader;
 
     canvas.drawArc(rect, startAngle, sweep, false, arcPaint);
-
-    // 끝점 하이라이트
-    final endAngle = startAngle + sweep;
-    final end = Offset(
-      center.dx + radius * math.cos(endAngle),
-      center.dy + radius * math.sin(endAngle),
+    // The round cap crosses the shader seam; keep it the starting color.
+    canvas.drawCircle(
+      center + Offset(math.cos(startAngle), math.sin(startAngle)) * radius,
+      thickness / 2,
+      Paint()..color = gradient1,
     );
-    canvas.drawCircle(end, thickness * 0.30, Paint()..color = gradient3.withOpacity(0.95));
   }
 
   @override
-  bool shouldRepaint(covariant _RingPainter old) =>
-      old.progress != progress ||
-          old.thickness != thickness ||
-          old.startAngle != startAngle ||
-          old.dim != dim ||
-          old.trackColor != trackColor ||
-          old.dimColor != dimColor ||
-          old.gradient1 != gradient1 ||
-          old.gradient2 != gradient2 ||
-          old.gradient3 != gradient3;
+  bool shouldRepaint(covariant _RingPainter old) {
+    return old.progress != progress ||
+        old.thickness != thickness ||
+        old.startAngle != startAngle ||
+        old.dim != dim ||
+        old.trackColor != trackColor ||
+        old.dimColor != dimColor ||
+        old.gradient1 != gradient1 ||
+        old.gradient2 != gradient2 ||
+        old.gradient3 != gradient3;
+  }
 }

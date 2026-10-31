@@ -1,0 +1,8 @@
+# Android-only regeneration; do not rewrite the approved iOS icons.
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path_android: "assets/icons/app_icon_ios_original_black.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icons/app_icon_ios_original_black.png"
+  adaptive_icon_foreground_inset: 16

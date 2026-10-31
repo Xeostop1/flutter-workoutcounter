@@ -9,11 +9,13 @@ class RoutineFirestore {
     final m = doc.data() ?? const <String, dynamic>{};
 
     // Timestamp -> DateTime 로 변환해서 모델에 넣음(모델은 cloud_firestore 모름)
-    DateTime? _toDate(dynamic v) =>
-        v is Timestamp ? v.toDate()
-            : v is int      ? DateTime.fromMillisecondsSinceEpoch(v)
-            : v is String   ? DateTime.tryParse(v)
-            : v as DateTime?;
+    DateTime? toDate(dynamic v) => v is Timestamp
+        ? v.toDate()
+        : v is int
+        ? DateTime.fromMillisecondsSinceEpoch(v)
+        : v is String
+        ? DateTime.tryParse(v)
+        : v as DateTime?;
 
     final itemsRaw = (m['items'] as List?) ?? const [];
     final items = itemsRaw
@@ -29,36 +31,42 @@ class RoutineFirestore {
       favorite: (m['favorite'] as bool?) ?? false,
       archived: (m['archived'] as bool?) ?? false,
       isDraft: (m['isDraft'] as bool?) ?? false,
-      createdAt: _toDate(m['createdAt']),
-      updatedAt: _toDate(m['updatedAt']),
+      createdAt: toDate(m['createdAt']),
+      updatedAt: toDate(m['updatedAt']),
+      ttsEnabled: m['ttsEnabled'] as bool? ?? true,
     );
   }
 
   /// Routine -> Firestore 쓰기 맵 (신규 생성)
-  static Map<String, dynamic> toCreateMap(Routine r, {required String ownerUid}) {
+  static Map<String, dynamic> toCreateMap(
+    Routine r, {
+    required String ownerUid,
+  }) {
     return {
-      'title'     : r.title,
+      'title': r.title,
       'categoryId': r.categoryId,
-      'items'     : r.items.map((e) => e.toMap()).toList(),
-      'ownerUid'  : ownerUid,
-      'favorite'  : r.favorite,
-      'archived'  : r.archived,
-      'isDraft'   : r.isDraft,
-      'createdAt' : FieldValue.serverTimestamp(),
-      'updatedAt' : FieldValue.serverTimestamp(),
+      'items': r.items.map((e) => e.toMap()).toList(),
+      'ownerUid': ownerUid,
+      'favorite': r.favorite,
+      'archived': r.archived,
+      'isDraft': r.isDraft,
+      'ttsEnabled': r.ttsEnabled,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     };
   }
 
   /// Routine -> Firestore 업데이트 맵 (부분 업데이트 포함)
   static Map<String, dynamic> toUpdateMap(Routine r) {
     return {
-      'title'     : r.title,
+      'title': r.title,
       'categoryId': r.categoryId,
-      'items'     : r.items.map((e) => e.toMap()).toList(),
-      'favorite'  : r.favorite,
-      'archived'  : r.archived,
-      'isDraft'   : r.isDraft,
-      'updatedAt' : FieldValue.serverTimestamp(),
+      'items': r.items.map((e) => e.toMap()).toList(),
+      'favorite': r.favorite,
+      'archived': r.archived,
+      'isDraft': r.isDraft,
+      'ttsEnabled': r.ttsEnabled,
+      'updatedAt': FieldValue.serverTimestamp(),
       // createdAt은 그대로 유지
     };
   }
