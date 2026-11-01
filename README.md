@@ -1,5 +1,9 @@
 # SPARKLE - 운동기록과 가운데를 통한 운동 습관 형성 앱
 
+> 2026-11-01 맥북 Android 검증 인계: 최신 브랜치는 `codex/android-verification-20261101`입니다.
+> 먼저 [맥북 시작 안내](MAC_NEXT_STEPS.md)와 [현재 인계](CURRENT_HANDOFF.md)를 확인하세요.
+> 아래 기존 소개와 별개로, 실제 Android 음성·게스트 기록 보존·로그인 병합은 아직 검증 중입니다.
+
 <div align="center">
 <img width="955" height="596" alt="image" src="https://github.com/user-attachments/assets/b8c8a88a-e621-4baa-92d0-b47801093fc4" />
 </div>
