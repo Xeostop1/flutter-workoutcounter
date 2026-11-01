@@ -8,12 +8,21 @@ Future<T?> showAppSheet<T>(
   required Widget child,
   Widget? primaryButton,
   bool isDismissible = true,
-}) {
-  return showModalBottomSheet<T>(
-    context: context,
+}) async {
+  final navigator = Navigator.of(context);
+  final localizations = MaterialLocalizations.of(context);
+  final route = ModalBottomSheetRoute<T>(
+    capturedThemes: InheritedTheme.capture(
+      from: context,
+      to: navigator.context,
+    ),
+    barrierLabel: localizations.scrimLabel,
+    barrierOnTapHint: localizations.scrimOnTapHint(
+      localizations.bottomSheetLabel,
+    ),
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.5),
+    modalBarrierColor: Colors.black.withValues(alpha: 0.5),
     isDismissible: isDismissible,
     builder: (_) => _AppSheetScaffold(
       title: title,
@@ -21,6 +30,10 @@ Future<T?> showAppSheet<T>(
       child: child,
     ),
   );
+  final result = await navigator.push<T>(route);
+  // Callers dispose input resources; keep them alive through the reverse transition.
+  await route.completed;
+  return result;
 }
 
 class _AppSheetScaffold extends StatelessWidget {
