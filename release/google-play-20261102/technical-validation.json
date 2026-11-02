@@ -1,0 +1,100 @@
+{
+  "scope": "technical_checks_only",
+  "asset_results": [
+    {
+      "path": "exports\\feature-graphic\\feature-1024x500-rgb.png",
+      "role": "feature",
+      "width": 1024,
+      "height": 500,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    },
+    {
+      "path": "exports\\phone-candidates\\01-home.png",
+      "role": "phone",
+      "width": 1080,
+      "height": 1920,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    },
+    {
+      "path": "exports\\phone-candidates\\02.png",
+      "role": "phone",
+      "width": 1080,
+      "height": 1920,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    },
+    {
+      "path": "exports\\phone-candidates\\03.png",
+      "role": "phone",
+      "width": 1080,
+      "height": 1920,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    },
+    {
+      "path": "exports\\phone-candidates\\04-growth.png",
+      "role": "phone",
+      "width": 1080,
+      "height": 1920,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    },
+    {
+      "path": "exports\\phone-candidates\\05.png",
+      "role": "phone",
+      "width": 1080,
+      "height": 1920,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    },
+    {
+      "path": "exports\\phone-candidates\\06.png",
+      "role": "phone",
+      "width": 1080,
+      "height": 1920,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    },
+    {
+      "path": "exports\\phone-candidates\\07.png",
+      "role": "phone",
+      "width": 1080,
+      "height": 1920,
+      "bit_depth": 8,
+      "color_type": 2,
+      "check_scope": "header_dimensions_and_color_type",
+      "technical_pass": true,
+      "errors": []
+    }
+  ],
+  "not_checked": [
+    "full PNG decoding/CRC (export tool separately decodes and compares pixels)",
+    "actual Android screenshot accuracy",
+    "metadata/legal declarations",
+    "live account and guest data behavior"
+  ],
+  "selected_technical_checks_pass": true
+}

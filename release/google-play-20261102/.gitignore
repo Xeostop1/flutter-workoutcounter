@@ -1,0 +1,11 @@
+__pycache__/
+diagnostics/
+*.aab
+*.apk
+*.keystore
+*.jks
+*.p8
+key.properties
+.env
+.env.*
+local.properties
